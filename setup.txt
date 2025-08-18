@@ -1,0 +1,10 @@
+1. Make a new folder 
+2. Have python 3.12.5 installed
+3. run : pip install uv
+4. Create venv using : uv venv --python 3.12
+5. run : .venv\Scripts\Activate.ps1
+6. If security error run : Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+7. Once it shows name of venv like (venv) then :
+    - uv pip install graphrag openai spacy nltk python-dotenv poethepoet
+    - python -m spacy download en_core_web_md
+8. Once done, execute : graphrag init --root .
