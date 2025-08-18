@@ -5,6 +5,9 @@
 5. run : .venv\Scripts\Activate.ps1
 6. If security error run : Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 7. Once it shows name of venv like (venv) then :
+    - IN CASE OF PIP ERROR: python -m ensurepip --upgrade
     - uv pip install graphrag openai spacy nltk python-dotenv poethepoet
     - python -m spacy download en_core_web_md
 8. Once done, execute : graphrag init --root .
+9. Download Neo4j dektop edition
+10. 

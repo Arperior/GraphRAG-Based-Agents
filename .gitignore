@@ -1,1 +1,51 @@
-.env
+# Byte-compiled / optimized / compiled files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# Virtual environments
+.env/
+venv/
+env/
+# Add other common virtual environment names if used, e.g., .venv/
+
+# Editor/IDE specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Test/Coverage reports
+.coverage
+htmlcov/
+.tox/
+.nox/
+nosetests.xml
+coverage.xml
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Jupyter Notebook files
+.ipynb_checkpoints
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Database files (e.g., SQLite)
+*.sqlite3
+# For Django projects, you might also ignore:
+# db.sqlite3
+
+# Local settings files (often contain sensitive info)
+local_settings.py
+# For Django projects, you might also ignore:
+# settings_local.py
