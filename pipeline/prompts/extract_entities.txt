@@ -1,0 +1,15 @@
+# ======================= Entity Extraction (Simplified for Mistral) =======================
+
+You are an information extraction model. Extract all named entities (persons, places, or organizations) from the text below.
+
+For each entity, output a JSON object with:
+{
+  "name": "<entity name>",
+  "type": "<PERSON | LOCATION | ORGANIZATION>",
+  "description": "<short description>"
+}
+
+Return ONLY valid JSON array — no explanations, no extra text.
+
+Text:
+{input_text}

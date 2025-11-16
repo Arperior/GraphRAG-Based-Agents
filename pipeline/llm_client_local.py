@@ -69,6 +69,10 @@ Return ONLY valid JSON. Do not add commentary.
 
     duration = time.time() - start
     text = out["choices"][0]["text"]
+    print("=== RAW MODEL OUTPUT ===")
+    print(text)
+    print("=========================")
+
     log.info(f"Model generation completed in {duration:.2f}s, output length={len(text)} chars")
 
     m = re.search(r'(\{.*\}|\[.*\])', text, re.S)

@@ -32,12 +32,12 @@ class GeminiConfig:
 
 @dataclass(frozen=True)
 class LocalLLMConfig:
-    # GGUF dir + filename (your setup: D:\models\...\mistral-7b-instruct-v0.1.Q4_K_M.gguf)
+    # GGUF dir + filename (your setup: models\...\mistral-7b-instruct-v0.1.Q4_K_M.gguf)
     model_dir: Path
     model_file: str
-    n_ctx: int = 2048
+    n_ctx: int = 4096
     n_gpu_layers: int = 32  
-    verbose: bool = False
+    verbose: bool = True
 
 @dataclass(frozen=True)
 class AppConfig:

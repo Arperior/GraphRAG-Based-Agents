@@ -40,4 +40,4 @@
     -NEO4J_QUERY_LIMIT=100
 19.Test APOC in Python: python -m pipeline.neo4j_client
 20. Run mistral test: testing.py
-21.Run app: python app.py
+21.Run app: streamlit run app.py

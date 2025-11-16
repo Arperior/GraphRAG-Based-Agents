@@ -3,7 +3,7 @@ import streamlit as st
 import uuid
 import logging
 
-from pipeline.preprocessing import chunk_text
+from pipeline.preprocessing import chunk_tokens
 from pipeline.entity_extraction import extract_graph
 from pipeline.relation_extractor import extract_relations
 from pipeline.graph_builder import build_and_store_graph
@@ -55,7 +55,7 @@ if st.button("Process Text"):
         st.warning("Please enter some text before processing.")
     else:
         st.info("Processing input text...")
-        chunks = chunk_text(input_text)
+        chunks = chunk_tokens(input_text)
 
         all_entities, all_relations = [], []
 
