@@ -1,0 +1,30 @@
+| Feature                             | Purpose                                                          | Implementation Plan                                                                                                                                                                         |
+| ----------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. PDF & Image Ingestion**        | Extend ingestion beyond plain text                               | ➤ Add PDF parser (e.g. `pdfplumber` or `PyMuPDF`) → extract text → pass to the same pipeline.<br>➤ For images, use CLIP or Gemini’s Vision API to caption & embed content.                  |
+| **2. Multimodal Embedding Layer**   | Represent non-textual data in a unified space                    | ➤ Use Graph nodes to store image/text embedding vectors (via CLIP or Gemini’s embedding endpoint).<br>➤ Later, you can cluster across modalities using vector similarity + graph proximity. |
+| **3. Context-Aware Chat Interface** | True chatbot mode where user queries drive retrieval + reasoning | ➤ Build a `/chat` mode: user sends a question → `retrieval.gather_evidence()` fetches relevant graph segments → Gemini synthesizes response (using the Analyst prompt).                     |
+| **4. Graph Memory Indexing**        | Speed up retrieval for large graphs                              | ➤ Implement hybrid search: Cypher for relations, FAISS (or Neo4j Graph Data Science) for embeddings.                                                                                        |
+| **5. Persistent User Memory**       | Personalized context over sessions                               | ➤ Store `User` nodes connected to relevant `Entity` nodes. Update graph incrementally per session.                                                                                          |
+| **6. Provenance Expansion**         | Show where every answer came from                                | ➤ Add a “Data Source” layer (document name, chunk ID, snippet preview). Show references in responses.                                                                                       |
+| **7. Visualization Dashboard**      | Visual graph exploration                                         | ➤ Integrate `pyvis` or `networkx` visualization inside Streamlit to display entity connections.                                                                                             |
+| **8. Evaluation Pipeline**          | Evaluate accuracy & relevance                                    | ➤ Create benchmark queries and compare against a vector-only RAG (to show GraphRAG’s advantage).                                                                                            |
+
+Current Snapshot:
+Streamlit App (UI)
+   │
+   ├── preprocessing.py → chunk_text()
+   ├── entity_extraction.py / relation_extractor.py
+   │       ↓
+   │   Mistral (local) via llama_cpp
+   │
+   ├── graph_builder.py → Neo4j
+   │       ↓
+   │   store_chunk_with_graph()
+   │
+   ├── clustering.py → Leiden community detection
+   │
+   ├── retrieval.py → contextual k-hop search
+   │       ↓
+   ├── llm_client_gemini.py → answer synthesis
+   │
+   └── logs/ + config/ (core system backbone)
