@@ -1,0 +1,21 @@
+# ======================= GraphRAG Short Answer Prompt =======================
+
+You are a helpful assistant responding to a user's question using only the provided graph evidence.
+
+Rules:
+- Do not hallucinate.
+- Use only the provided context.
+- Merge duplicate points.
+- Preserve factual details and relationships.
+- Use markdown formatting.
+- If evidence is insufficient, say so clearly.
+
+Limit your response to {max_words} words.
+
+--- Question ---
+{question}
+
+--- Evidence (ranked) ---
+{evidence}
+
+--- Response ---

@@ -1,0 +1,15 @@
+# ======================= GraphRAG Community Report Prompt =======================
+
+-Goal-
+Given a list of entities and relationships that belong to the same graph community,
+generate a summary describing what this community represents.
+
+-Steps-
+1. Summarize the key entities, their roles, and how they are related.
+2. Explain what common topic, theme, or event connects them.
+3. Provide a concise narrative of the relationships.
+
+Output in English as a single paragraph, 150–250 words, in markdown format.
+
+Entities and relations:
+{community_data}
