@@ -6,8 +6,10 @@
 6. If security error run : Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 7. Once it shows name of venv like (venv) then :
     - IN CASE OF PIP ERROR: python -m ensurepip --upgrade
-    - uv pip install graphrag openai spacy nltk python-dotenv poethepoet requests python-Levenshtein PyPDF2 tiktoken google-genai streamlit 
+    - uv pip install graphrag openai spacy nltk python-dotenv poethepoet requests python-Levenshtein PyPDF2 tiktoken google-genai streamlit llama-cpp-python huggingface_hub pillow
     - python -m spacy download en_core_web_md
+    * NOTE: If you have an NVIDIA GPU, install llama-cpp-python with CUDA support for faster processing:
+      $env:CMAKE_ARGS="-DLLAMA_CUDA=on"; pip install llama-cpp-python --upgrade --force-reinstall --no-cache-dir
 8. Once done, execute order 66.
 9. Install JDK 21 :- https://docs.oracle.com/en/java/javase/24/install/installation-jdk-microsoft-windows-platforms.html#GUID-A7E27B90-A28D-4237-9383-A58B416071CA
 10. Download Neo4j :- https://neo4j.com/docs/operations-manual/current/installation/windows/
@@ -44,18 +46,40 @@
         FOR (com:Community) REQUIRE com.id IS UNIQUE;
         CREATE INDEX user_last_seen_idx IF NOT EXISTS
         FOR (u:User) ON (u.last_seen);
-17. Download Mistral model (quantized GGUF version):
-    -Go to: https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF
-    -Download file: mistral-7b-instruct-v0.1.Q4_K_M.gguf
-    -Create folder: D:\models\Mistral-7B-Instruct-v0.1-GGUF\
-    -Move the model file there.
+17. Download Local Models (Text & Vision) to C:\models:
+    - Create folder: C:\models
+    - OPTION A (Recommended): Run the automated script provided:
+        python download_models_v2.py
+    
+    - OPTION B (Manual Download):
+        1. Text Model (Mistral):
+           - URL: https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF
+           - File: mistral-7b-instruct-v0.1.Q4_K_M.gguf
+           - Save to: C:\models\mistral-7b-instruct-v0.1.Q4_K_M.gguf
+        
+        2. Vision Model (LLaVA v1.5):
+           - URL: https://huggingface.co/jartine/llava-v1.5-7B-GGUF
+           - File: llava-v1.5-7b-Q4_K.gguf
+           - Save to: C:\models\llava-v1.5-7b-Q4_K.gguf
+        
+        3. Vision Projector (LLaVA Clip):
+           - URL: https://huggingface.co/jartine/llava-v1.5-7B-GGUF
+           - File: mmproj-model-f16.gguf
+           - Save to: C:\models\mmproj-model-f16.gguf
+
 18. Create .env in project root with:
     -NEO4J_URI=bolt://localhost:7687
     -NEO4J_USER=neo4j
     -NEO4J_PASSWORD=your_password
-    -GEMINI_API_KEY=your_gemini_api_key
-    -LOCAL_LLM_MODEL=D:\models\Mistral-7B-Instruct-v0.1-GGUF
+    -GEMINI_API_KEY=your_gemini_api_key (Optional now for Image, still used for Chat if enabled)
+    # Central Model Path
+    -LOCAL_LLM_MODEL=C:\models
+    # Text Model
     -LOCAL_LLM_FILE=mistral-7b-instruct-v0.1.Q4_K_M.gguf
+    # Vision Models
+    -LOCAL_LLAVA_MODEL=C:\models\llava-v1.5-7b-Q4_K.gguf
+    -LOCAL_LLAVA_CLIP=C:\models\mmproj-model-f16.gguf
+    # App Settings
     -LEIDEN_RESOLUTION=1.0
     -RETRIEVAL_SEARCH_LIMIT=10
     -NEO4J_QUERY_LIMIT=100

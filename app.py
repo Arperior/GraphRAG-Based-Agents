@@ -29,8 +29,11 @@ from pipeline.memory import (
 from pipeline.clustering import run_leiden, summarize_communities
 from pipeline.llm_client_gemini import gemini_complete
 
-# NEW: PDF Processing Import
+# PDF Processing Import (Keeps using Gemini/Original logic)
 from pipeline.pdf_utils import process_pdf_upload
+
+# NEW: Image Processing Import (Uses Local LLM)
+from pipeline.image_utils import process_image_upload
 
 
 # ============================================================================
@@ -102,8 +105,8 @@ if "chat_history" not in st.session_state:
 # ============================================================================
 with st.expander("Ingest Data Into Graph", expanded=False):
     
-    # We use tabs to switch between raw text paste and PDF upload
-    tab1, tab2 = st.tabs(["Text Input", "PDF Upload"])
+    # We use tabs to switch between raw text, PDF, and Image upload
+    tab1, tab2, tab3 = st.tabs(["Text Input", "PDF Upload", "Image Upload"])
 
     # ------------------------------------------------------------------------
     # TAB 1: RAW TEXT INPUT
@@ -191,7 +194,7 @@ with st.expander("Ingest Data Into Graph", expanded=False):
                     try:
                         # process_pdf_upload handles the full cycle: 
                         # read -> summarize -> chunk -> extract -> store
-                        result = process_pdf_upload(uploaded_file, run_relations=use_rel_pdf,user_id=USER_ID)
+                        result = process_pdf_upload(uploaded_file, run_relations=use_rel_pdf, user_id=USER_ID)
                         
                         st.success(f"PDF Processed! Saved reference text to: `{result['txt_path']}`")
                         
@@ -207,6 +210,43 @@ with st.expander("Ingest Data Into Graph", expanded=False):
                         log.error(f"PDF Processing failed: {e}", exc_info=True)
             else:
                 st.warning("Please upload a PDF file first.")
+
+    # ------------------------------------------------------------------------
+    # TAB 3: IMAGE UPLOAD (LOCAL)
+    # ------------------------------------------------------------------------
+    with tab3:
+        st.markdown("""
+        **Image Processing Pipeline (LOCAL):**
+        1. Upload Image (Diagrams, Charts, Screenshots).
+        2. **Describe** via **Local LLaVA** (No API Key required).
+        3. Extract Graph from the description.
+        """)
+        
+        uploaded_img = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"])
+        use_rel_img = st.checkbox("Enable relation extraction (Image)", value=True)
+        
+        if st.button("Process Image (Local)"):
+            if uploaded_img:
+                with st.spinner("Analyzing Image... Local LLaVA is extracting details..."):
+                    try:
+                        # process_image_upload handles the full cycle: 
+                        # load -> describe (LOCAL) -> chunk -> extract -> store
+                        result = process_image_upload(uploaded_img, run_relations=use_rel_img, user_id=USER_ID)
+                        
+                        st.success(f"Image Processed! Saved description to: `{result['txt_path']}`")
+                        
+                        col1, col2 = st.columns(2)
+                        col1.metric("Entities Added", result['total_entities'])
+                        col2.metric("Relations Added", result['total_relations'])
+                        
+                        with st.expander("View Generated Image Description"):
+                            st.markdown(result['summary'])
+                            
+                    except Exception as e:
+                        st.error(f"Image Processing failed: {e}")
+                        log.error(f"Image Processing failed: {e}", exc_info=True)
+            else:
+                st.warning("Please upload an image first.")
 
 
 # ============================================================================
@@ -232,7 +272,7 @@ if prompt:
         user_id=USER_ID
     )
 
-    # Generate final answer
+    # Generate final answer (Uses Gemini by default in original retrieval.py)
     answer = synthesize_answer(
         prompt,
         evidence,

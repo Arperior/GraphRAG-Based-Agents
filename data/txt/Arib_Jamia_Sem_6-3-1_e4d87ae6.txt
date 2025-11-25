@@ -1,0 +1,133 @@
+=== SUMMARY (used for KG) ===
+**Arib Ansari:** Possesses Student ID 202207016.
+**Arib Ansari:** Communicates via phone at 9910269509.
+**Arib Ansari:** Communicates via email at envelopesheikhu03@gmail.com.
+**Arib Ansari:** Maintains a LinkedIn profile at LinkedIn/Arib Ansari.
+**Arib Ansari:** Maintains a GitHub profile at github.com/Arperior.
+**Arib Ansari:** Is expected to graduate from Jamia Millia Islamia in May 2026.
+**Arib Ansari:** Is pursuing a Bachelor of Technology in Computer Science at Jamia Millia Islamia.
+**Arib Ansari:** Has a CGPA of 8.85/10.00 in Bachelor of Technology in Computer Science at Jamia Millia Islamia.
+**Arib Ansari:** Completed relevant coursework in Prob & Stats, Machine Learning and Data Science (Python), Cybersecurity, Cloud Computing, and Blockchain Applications at Jamia Millia Islamia.
+**Arib Ansari:** Attended Delhi Public School Indirapuram from 2008-2022.
+**Arib Ansari:** Studied PCM + CS at Delhi Public School Indirapuram.
+**Arib Ansari:** Scored 95% in Class XII at Delhi Public School Indirapuram.
+**Arib Ansari:** Scored 94.8% in Class X at Delhi Public School Indirapuram.
+**Arib Ansari:** Worked as a Technology Development Program Intern at Optum Global Solutions from June 2025 to August 2025.
+**Arib Ansari:** Migrated config management from AWS CodeCommit to EFS-backed PVCs on AWS EKS at Optum Global Solutions.
+**Arib Ansari:** Enabled Gitless, volume-based config injection across dev & stage environments at Optum Global Solutions.
+**Arib Ansari:** Re-architected Spring Cloud Config Server with native mode, service-specific label control, and profile layering at Optum Global Solutions.
+**Arib Ansari:** Improved boot speed from ↓27s to 4s at Optum Global Solutions.
+**Arib Ansari:** Increased developer autonomy at Optum Global Solutions.
+**Arib Ansari:** Integrated EFS workflows into Jenkins CI/CD with automated sync, version tagging, and config change detection at Optum Global Solutions.
+**Arib Ansari:** Eliminated manual steps at Optum Global Solutions.
+**Arib Ansari:** Improved overall service boot performance by 5% at Optum Global Solutions.
+**Arib Ansari:** Designed HybridTongue : Code-Mixed Sentiment Analysis using Scikit-Learn, Gensim, Pytorch, Transformers, and Regex.
+**Arib Ansari:** Designed a comprehensive preprocessing pipeline to clean and normalize mixed-language text for HybridTongue.
+**Arib Ansari:** Achieved a near unanimous 10% increase in accuracy for HybridTongue.
+**Arib Ansari:** Improved the quality of Word2Vec-based feature embeddings for HybridTongue.
+**Arib Ansari:** Enabled superior intermediate representation of the data for HybridTongue.
+**Arib Ansari:** Leveraged MuRIL (Multilingual Representations for Indian Languages) for HybridTongue.
+**Arib Ansari:** Fine-tuned MuRIL for sentiment classification, yielding a 5% accuracy improvement for HybridTongue.
+**Arib Ansari:** Achieved a final F1 score of 0.76 for HybridTongue.
+**Arib Ansari:** Designed Falkon : Few-Shot Language Agnostic Keyword Spotting System using TorchAudio, Pytorch, Transformers, and Librosa.
+**Arib Ansari:** Resampled audio data and extracted MFCC (Mel-Frequency Cepstral Coefficients) features for Falkon.
+**Arib Ansari:** Established consistent input representations for model training for Falkon.
+**Arib Ansari:** Trained a Transformer-based encoder-only architecture to classify MFCCs for Falkon.
+**Arib Ansari:** Achieved a base class (10 languages with 100 samples per class) accuracy of 84% for Falkon.
+**Arib Ansari:** Used few-shot learning mechanism to extend the model’s capabilities to low-resource classes for Falkon.
+**Arib Ansari:** Applied data augmentation, freezing layers, and fine-tuning the model for Falkon.
+**Arib Ansari:** Integrated 440 novel classes with only a 10% drop in performance for Falkon.
+**Arib Ansari:** Is proficient in C, C++, Python, SQL.
+**Arib Ansari:** Has basic ability with Assembly, BASH, HTML, Java, LaTex.
+**Arib Ansari:** Is skilled in TensorFlow, PyTorch, Scikit-learn, Keras, OpenCV, Git, SQL, SpringBoot, NLTK, spaCy, and Hugging Face Transformers.
+**Arib Ansari:** Is experienced with AWS and Azure cloud platforms.
+**Arib Ansari:** Is experienced with Jenkins, Harness, Kubernetes, Freelens, and Docker DevOps tools.
+**Arib Ansari:** Qualified for GATE 2025 with AIR 7713.
+**Arib Ansari:** Achieved Top 100 Ranking in the Amazon ML Challenge 2024.
+**Arib Ansari:** Was the SIH 2024 Grand Finals Winner (PS:1680).
+**Arib Ansari:** Won the Paradox ML Challenge at Google Developer’s Group.
+**Arib Ansari:** Is a Central Merit Scholarship Awardee 2025.
+**Arib Ansari:** Serves as Student Placement Coordinator at Faculty of Engineering and Technology, JMI.
+**Arib Ansari:** Facilitated placement talks, internship tests, and interview processes at Faculty of Engineering and Technology, JMI.
+**Arib Ansari:** Contacted HR representatives of various companies at Faculty of Engineering and Technology, JMI.
+**Arib Ansari:** Established strong professional connections at Faculty of Engineering and Technology, JMI.
+**Arib Ansari:** Coordinated with recruiters and students to ensure smooth execution of placement activities at Faculty of Engineering and Technology, JMI.
+**Arib Ansari:** Serves as Head of Research and Development at UAV JMI.
+**Arib Ansari:** Researched and developed strategies for autonomous flight and drone path planning at UAV JMI.
+**Arib Ansari:** Optimized performance for the SAE Aero Design Challenge (ADDC) at UAV JMI.
+**Arib Ansari:** Analyzed the feasibility of hardware implementation at UAV JMI.
+**Arib Ansari:** Ensured compatibility and efficiency for UAV systems at UAV JMI.
+**Arib Ansari:** Led the R&D team at UAV JMI.
+**Arib Ansari:** Coordinated tasks to deliver innovative solutions and meet competition requirements at UAV JMI.
+**Arib Ansari:** Is a member of the Cloud Team at Google Developer’s Group, JMI.
+**Arib Ansari:** Organized and actively participated in the Cloud GenAI Campaign at Google Developer’s Group, JMI.
+**Arib Ansari:** Promoted awareness and practical applications of Generative AI at Google Developer’s Group, JMI.
+**Arib Ansari:** Conducted workshops on React and GitHub at Google Developer’s Group, JMI.
+**Arib Ansari:** Enabled peers to gain hands-on experience and improve their development skills at Google Developer’s Group, JMI.
+
+=== FULL TEXT (for reference) ===
+Arib Ansari
+Student ID: 202207016 ♂phone9910269509
+/envel⌢pesheikhu03@gmail.com /linkedinLinkedIn/Arib Ansari /githubgithub.com/Arperior
+Education
+Jamia Millia Islamia Expected May 2026
+Bachelor of Technology in Computer Science (CGPA: 8.85 / 10.00) Delhi
+•Relevant Coursework: Prob & Stats,Machine Learning and Data Science(Python),Cybersecurity,Cloud
+Computing,Blockchain Applications
+Delhi Public School Indirapuram 2008-2022
+PCM + CS Ghaziabad
+•Class XII- 95%
+•Class X - 94.8%
+Experience
+Optum Global Solutions June 2025 - August 2025
+Technology Development Program Intern Hyderabad
+•Migrated conﬁg management from AWS CodeCommit to EFS-backed PVCs on AWS EKS, enabling Gitless,
+volume-based conﬁg injection across dev & stage environments.
+•Re-architected Spring Cloud Conﬁg Server with native mode, service-speciﬁc label control, and proﬁle layering,
+improving boot speed ( ↓27s→4s) and increasing developer autonomy.
+•Integrated EFS workﬂows into Jenkins CI/CD with automated sync, version tagging, and conﬁg change detection —
+eliminating manual steps and improving overall service boot performance by 5%.
+Projects
+HybridTongue : Code-Mixed Sentiment Analysis |Scikit-Learn,Gensim,Pytorch,Transformers,Regex
+*Designed a comprehensive preprocessing pipeline to clean and normalize mixed-language text having a near
+unanimous 10% increase in accuracy, improving the quality of Word2Vec-based feature embeddings and enabling
+superior intermediate representation of the data.
+*Leveraged MuRIL (Multilingual Representations for Indian Languages), a transformer-based language model
+tailored for Indian languages. Fine-tuning MuRIL for sentiment classiﬁcation yielded a 5% accuracy improvement
+over traditional approaches resulting in ﬁnal F1 score of 0.76
+Falkon : Few-Shot Language Agnostic Keyword Spotting System |TorchAudio,Pytorch,Transformers,Librosa
+*Resampled audio data and extracted MFCC (Mel-Frequency Cepstral Coeﬃcients) features for each class, establish
+consistent input representations for model training.
+*Trained a Transformer-based encoder-only architecture to classify MFCCs, achieving a base class,i.e 10 languages
+with 100 samples per class, accuracy of 84%.
+*Used few-shot learning mechanism to extend the model’s capabilities to low-resource classes. By applying data
+augmentation, freezing layers, and ﬁne-tuning the model, successfully integrated 440 novel classes with only a
+10% drop in performance.
+Skills Summary
+•Programming Languages: Proﬁcient in: C, C++, Python, SQL
+Also basic ability with: Assembly, BASH, HTML , Java , LaTex
+•Frameworks and Libraries: TensorFlow , PyTorch, Scikit-learn , Keras , OpenCV , Git , SQL ,SpringBoot,
+NLTK , spaCy , Hugging Face Transformers.
+•Cloud Platforms: AWS, Azure
+•DevOps Tools: Jenkins , Harness , Kubernetes , Freelens , Docker
+Achievements
+•GATE 2025 Qualiﬁed - AIR 7713
+•Achieved Top 100 Ranking - Amazon ML Challenge 2024
+•SIH 2024 Grand Finals Winner - PS:1680
+•Winner Paradox ML Challenge - Google Developer’s Group
+•Central Merit Scholarship Awardee 2025
+Responsibilities
+Student Placement Coordinator : Faculty of Engineering and Technology, JMI
+*Successfully facilitated placement talks, internship tests, and interview processes.
+*Contacted HR representatives of various companies and established strong professional connections.
+*Coordinated with recruiters and students to ensure smooth execution of placement activities.
+Head of Research and Development : UAV JMI
+*Researched and developed strategies for autonomous ﬂight and drone path planning to optimize performance for
+the SAE Aero Design Challenge (ADDC).
+*Analyzed the feasibility of hardware implementation, ensuring compatibility and eﬃciency for UAV systems.
+*Led the R&D team, coordinating tasks to deliver innovative solutions and meet competition requirements.
+Cloud Team : Google Developer’s Group, JMI
+*Organized and actively participated in the Cloud GenAI Campaign, promoting awareness and practical applications
+of Generative AI.
+*Conducted workshops on React and GitHub, enabling peers to gain hands-on experience and improve their
+development skills.

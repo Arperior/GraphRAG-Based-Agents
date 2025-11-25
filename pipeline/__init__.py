@@ -11,5 +11,7 @@ __all__ = [
     "llm_client_local",
     "llm_client_gemini",
     "utils",
-    "memory"
+    "memory",
+    "pdf_utils",
+    "image_utils"  # <--- Added this
 ]
