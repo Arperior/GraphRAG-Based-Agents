@@ -6,7 +6,7 @@
 6. If security error run : Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 7. Once it shows name of venv like (venv) then :
     - IN CASE OF PIP ERROR: python -m ensurepip --upgrade
-    - uv pip install graphrag openai spacy nltk python-dotenv poethepoet requests python-Levenshtein PyPDF@ tiktoken google-genai
+    - uv pip install graphrag openai spacy nltk python-dotenv poethepoet requests python-Levenshtein PyPDF2 tiktoken google-genai streamlit 
     - python -m spacy download en_core_web_md
 8. Once done, execute order 66.
 9. Install JDK 21 :- https://docs.oracle.com/en/java/javase/24/install/installation-jdk-microsoft-windows-platforms.html#GUID-A7E27B90-A28D-4237-9383-A58B416071CA

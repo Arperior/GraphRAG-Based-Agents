@@ -1,0 +1,97 @@
+=== PROCESSING MODE ===
+Used Fallback (Full Text): False
+
+=== TARGET TEXT (Used for Graph) ===
+**Arib Ansari Entity-Relation Extractions:**
+
+*   **Arib Ansari** is a student with Student ID 202207016.
+*   **Arib Ansari** possesses phone number 9910269509.
+*   **Arib Ansari** possesses email address envelopesheikhu03@gmail.com.
+*   **Arib Ansari** has a LinkedIn profile at LinkedIn/Arib Ansari.
+*   **Arib Ansari** has a GitHub profile at github.com/Arperior.
+*   **Arib Ansari** is pursuing a Bachelor of Technology in Computer Science at Jamia Millia Islamia.
+*   **Arib Ansari**'s expected graduation from Jamia Millia Islamia is May 2026.
+*   **Arib Ansari** has a CGPA of 8.85/10.00 at Jamia Millia Islamia.
+*   **Arib Ansari** completed coursework including Prob & Stats, Machine Learning and Data Science(Python), Cybersecurity, Cloud Computing and Blockchain at Jamia Millia Islamia.
+*   **Arib Ansari** studied at Delhi Public School Indirapuram from 2008 to 2022.
+*   **Arib Ansari** studied PCM + CS at Delhi Public School Indirapuram.
+*   **Arib Ansari** scored 95% in Class XII at Delhi Public School Indirapuram.
+*   **Arib Ansari** scored 94.8% in Class X at Delhi Public School Indirapuram.
+*   **Arib Ansari** worked as a Technology Development Program Intern at Optum Global Solutions from June 2025 to August 2025.
+*   **Arib Ansari** re-architected Spring Cloud Config Server with native mode, service-specific label control, and profile layering at Optum Global Solutions.
+*   **Arib Ansari** improved boot speed from 27s to 4s through Spring Cloud Config Server re-architecture at Optum Global Solutions.
+*   **Arib Ansari** increased developer autonomy through Spring Cloud Config Server re-architecture at Optum Global Solutions.
+*   **Arib Ansari** integrated EFS workflows into Jenkins CI/CD with automated sync, version tagging, and config change detection at Optum Global Solutions.
+*   **Arib Ansari** eliminated manual steps using Jenkins CI/CD with automated sync, version tagging, and config change detection at Optum Global Solutions.
+*   **Arib Ansari** improved overall service boot performance by 5% using Jenkins CI/CD with automated sync, version tagging, and config change detection at Optum Global Solutions.
+*   **Arib Ansari** designed HybridTongue: Code-Mixed Sentiment Analysis using Scikit-Learn, Gensim, Pytorch, Transformers, and Regex.
+*   **Arib Ansari** designed a comprehensive preprocessing pipeline for mixed-language text in HybridTongue.
+*   **Arib Ansari** achieved a near unanimous 10% increase in accuracy with HybridTongue.
+*   **Arib Ansari** improved the quality of Word2Vec-based feature embeddings with HybridTongue.
+*   **Arib Ansari** enabled superior intermediate representation of the data in HybridTongue.
+*   **Arib Ansari** leveraged MuRIL (Multilingual Representations for Indian Languages) for sentiment classification in HybridTongue.
+*   **Arib Ansari** achieved a 5% accuracy improvement over traditional approaches by fine-tuning MuRIL for sentiment classification.
+*   **Arib Ansari** achieved a final F1 score of 0.76 with MuRIL in HybridTongue.
+*   **Arib Ansari** worked on Falkon : Few-Shot Language Agnostic Keyword Spotting System using TorchAudio, Pytorch, Transformers, and Librosa.
+*   **Arib Ansari** trained a Transformer-based encoder-only architecture to classify MFCCs in Falkon.
+*   **Arib Ansari** achieved a base class accuracy of 84% for 10 languages with 100 samples per class in Falkon.
+*   **Arib Ansari** used few-shot learning mechanism to extend the model’s capabilities to low-resource classes in Falkon.
+*   **Arib Ansari** applied data augmentation, freezing layers, and fine-tuning the model in Falkon.
+*   **Arib Ansari** integrated 440 novel classes with only a 10% drop in performance in Falkon.
+*   **Arib Ansari** is proficient in C, C++, Python, and SQL.
+*   **Arib Ansari** has basic ability with Assembly, BASH, HTML, Java, and LaTex.
+*   **Arib Ansari** is skilled in TensorFlow, PyTorch, Scikit-learn, Keras, OpenCV, Git, SQL, SpringBoot, NLTK, spaCy, and Hugging Face Transformers.
+*   **Arib Ansari** is familiar with the cloud platforms AWS and Azure.
+*   **Arib Ansari** is familiar with the DevOps tools Jenkins, Harness, Kubernetes, Freelens, and Docker.
+*   **Arib Ansari** qualified for GATE 2025 with AIR 7713.
+*   **Arib Ansari** achieved a Top 100 Ranking in Amazon ML Challenge 2024.
+*   **Arib Ansari** was a SIH 2024 Grand Finals Winner - PS:1680.
+*   **Arib Ansari** won the Paradox ML Challenge at Google Developer’s Group.
+*   **Arib Ansari** is a Central Merit Scholarship Awardee 2025.
+
+=== ORIGINAL FULL TEXT ===
+Arib Ansari
+Student ID: 202207016 ♂phone9910269509
+/envel⌢pesheikhu03@gmail.com /linkedinLinkedIn/Arib Ansari /githubgithub.com/Arperior
+Education
+Jamia Millia Islamia Expected May 2026
+Bachelor of Technology in Computer Science (CGPA: 8.85 / 10.00) Delhi
+•Relevant Coursework: Prob & Stats,Machine Learning and Data Science(Python),Cybersecurity,Cloud Computing,Blockchain
+Applications
+Delhi Public School Indirapuram 2008-2022
+PCM + CS Ghaziabad
+•Class XII- 95%
+•Class X - 94.8%
+Experience
+Optum Global Solutions June 2025 - August 2025
+Technology Development Program Intern Hyderabad
+•Re-architected Spring Cloud Conﬁg Server with native mode, service-speciﬁc label control, and proﬁle layering, improving boot
+speed ( ↓27s→4s) and increasing developer autonomy.
+•Integrated EFS workﬂows into Jenkins CI/CD with automated sync, version tagging, and conﬁg change detection — eliminating
+manual steps and improving overall service boot performance by 5%.
+Projects
+HybridTongue : Code-Mixed Sentiment Analysis |Scikit-Learn,Gensim,Pytorch,Transformers,Regex
+*Designed a comprehensive preprocessing pipeline to clean and normalize mixed-language text having a near unanimous 10%
+increase in accuracy, improving the quality of Word2Vec-based feature embeddings and enabling superior intermediate
+representation of the data.
+*Leveraged MuRIL (Multilingual Representations for Indian Languages), a transformer-based language model tailored for Indian
+languages. Fine-tuning MuRIL for sentiment classiﬁcation yielded a 5% accuracy improvement over traditional approaches
+resulting in ﬁnal F1 score of 0.76
+Falkon : Few-Shot Language Agnostic Keyword Spotting System |TorchAudio,Pytorch,Transformers,Librosa
+*Trained a Transformer-based encoder-only architecture to classify MFCCs, achieving a base class,i.e 10 languages with 100
+samples per class, accuracy of 84%.
+*Used few-shot learning mechanism to extend the model’s capabilities to low-resource classes. By applying data augmentation,
+freezing layers, and ﬁne-tuning the model, successfully integrated 440 novel classes with only a 10% drop in performance.
+Skills Summary
+•Programming Languages: Proﬁcient in: C, C++, Python, SQL
+Also basic ability with: Assembly, BASH, HTML , Java , LaTex
+•Frameworks and Libraries: TensorFlow , PyTorch, Scikit-learn , Keras , OpenCV , Git , SQL ,SpringBoot, NLTK , spaCy ,
+Hugging Face Transformers.
+•Cloud Platforms: AWS, Azure
+•DevOps Tools: Jenkins , Harness , Kubernetes , Freelens , Docker
+Achievements
+•GATE 2025 Qualiﬁed - AIR 7713
+•Achieved Top 100 Ranking - Amazon ML Challenge 2024
+•SIH 2024 Grand Finals Winner - PS:1680
+•Winner Paradox ML Challenge - Google Developer’s Group
+•Central Merit Scholarship Awardee 2025

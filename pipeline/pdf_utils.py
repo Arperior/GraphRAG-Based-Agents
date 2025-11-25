@@ -2,6 +2,9 @@
 
 import os
 import uuid
+import time
+import random
+import logging
 from io import BytesIO
 
 import google.generativeai as genai
@@ -9,21 +12,42 @@ from PyPDF2 import PdfReader
 
 from pipeline.preprocessing import chunk_tokens
 from pipeline.entity_extraction import extract_graph
-from pipeline.relation_extractor import extract_relations
+from pipeline.relation_extractor import extract_relations_from_text as extract_relations
 from pipeline.graph_builder import build_and_store_graph
 
+log = logging.getLogger("pdf_utils")
 
 # ----------------------------------------------------
 # Gemini config
 # ----------------------------------------------------
 API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
-if not API_KEY:
-    raise RuntimeError("Set GOOGLE_API_KEY or GEMINI_API_KEY in your .env file")
-
-# Default model – you can override with GEMINI_MODEL_NAME in .env
 DEFAULT_MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.0-flash")
 
-genai.configure(api_key=API_KEY)
+if API_KEY:
+    genai.configure(api_key=API_KEY)
+else:
+    log.warning("GOOGLE_API_KEY not found. PDF summarization will fail.")
+
+
+# ----------------------------------------------------
+# Helper: Retry Logic
+# ----------------------------------------------------
+def _generate_with_retry(model, prompt: str, retries: int = 3):
+    """
+    Calls Gemini with exponential backoff for 429 errors.
+    """
+    for attempt in range(1, retries + 1):
+        try:
+            return model.generate_content(prompt)
+        except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "Resource exhausted" in err_str:
+                wait_time = (2 ** attempt) + random.uniform(0, 1)
+                log.warning(f"Gemini 429 Limit hit. Retrying in {wait_time:.1f}s (Attempt {attempt}/{retries})")
+                time.sleep(wait_time)
+                continue
+            raise e
+    raise RuntimeError("Gemini 429: Resource exhausted after max retries.")
 
 
 # ----------------------------------------------------
@@ -31,11 +55,15 @@ genai.configure(api_key=API_KEY)
 # ----------------------------------------------------
 def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
     """Extract full text from PDF using PyPDF2."""
-    reader = PdfReader(BytesIO(pdf_bytes))
-    parts = []
-    for page in reader.pages:
-        parts.append(page.extract_text() or "")
-    return "\n".join(parts).strip()
+    try:
+        reader = PdfReader(BytesIO(pdf_bytes))
+        parts = []
+        for page in reader.pages:
+            parts.append(page.extract_text() or "")
+        return "\n".join(parts).strip()
+    except Exception as e:
+        log.error(f"Failed to extract text from PDF: {e}")
+        return ""
 
 
 # ----------------------------------------------------
@@ -49,13 +77,21 @@ def _chunk_for_summary(text: str, max_chars: int = 24000):
 
 def summarize_with_gemini(text: str, model_name: str | None = None) -> str:
     """
-    Summarize text using Gemini (with chunking for long PDFs).
+    Summarize text using Gemini. Returns None or empty string if it fails.
     """
+    if not API_KEY:
+        log.error("Cannot summarize: No API Key.")
+        return ""
+
     if not text.strip():
         return ""
 
     model_name = model_name or DEFAULT_MODEL_NAME
-    model = genai.GenerativeModel(model_name)
+    try:
+        model = genai.GenerativeModel(model_name)
+    except Exception as e:
+        log.error(f"Failed to init Gemini model: {e}")
+        return ""
 
     chunks = _chunk_for_summary(text)
     partial_summaries: list[str] = []
@@ -64,15 +100,19 @@ def summarize_with_gemini(text: str, model_name: str | None = None) -> str:
         prompt = (
             "You are an expert Knowledge Graph Architect. Your task is to create a highly detailed "
             "summary of the following text specifically for Entity-Relation extraction.\n\n"
-    "STRICT INSTRUCTIONS:\n"
-    "1. Entity Preservation: Do NOT generalize. Keep specific names of people, organizations, dates, and technical terms.\n"
-    "2. No Pronouns: Replace 'he', 'she', 'it', or 'they' with the actual names (e.g., write 'Elon Musk' instead of 'he').\n"
-    "3. Action-Oriented: Write sentences in clear Subject-Action-Object format (e.g., 'Company A acquired Company B').\n"
-    "4. Density: Include as many factual details as possible while condensing the word count.\n\n"
+            "STRICT INSTRUCTIONS:\n"
+            "1. Entity Preservation: Do NOT generalize. Keep specific names of people, organizations, dates, and technical terms.\n"
+            "2. No Pronouns: Replace 'he', 'she', 'it', or 'they' with the actual names.\n"
+            "3. Action-Oriented: Write sentences in clear Subject-Action-Object format.\n"
+            "4. Density: Include as many factual details as possible while condensing the word count.\n\n"
             f"Chunk {i}:\n{chunk}"
         )
-        resp = model.generate_content(prompt)
-        partial_summaries.append(resp.text.strip())
+        try:
+            resp = _generate_with_retry(model, prompt)
+            if resp and resp.text:
+                partial_summaries.append(resp.text.strip())
+        except Exception as e:
+            log.error(f"Failed to summarize chunk {i}: {e}")
 
     if not partial_summaries:
         return ""
@@ -85,23 +125,25 @@ def summarize_with_gemini(text: str, model_name: str | None = None) -> str:
         "Combine these partial summaries into one coherent, concise summary "
         "of 6–8 sentences:\n\n" + combined
     )
-    final_resp = model.generate_content(final_prompt)
-    return final_resp.text.strip()
+    try:
+        final_resp = _generate_with_retry(model, final_prompt)
+        return final_resp.text.strip()
+    except Exception as e:
+        log.error(f"Failed to generate final summary: {e}")
+        return combined[:10000]
 
 
 # ----------------------------------------------------
 # Main: PDF upload → summary → KG
 # ----------------------------------------------------
-def process_pdf_upload(uploaded_file, run_relations: bool = True):
+def process_pdf_upload(uploaded_file, run_relations: bool = True, user_id: str | None = None):
     """
     Pipeline:
       1. Read PDF bytes.
       2. Extract FULL text.
       3. Summarize with Gemini.
-      4. Save SUMMARY + FULL TEXT into data/txt/*.txt.
-      5. Build entities & relations **only from the summary** (faster):
-           summary → chunk_tokens → extract_graph → extract_relations → build_and_store_graph.
-      6. Return summary, txt_path, total_entities, total_relations.
+      4. Fallback if summary fails.
+      5. Build entities & relations (with user_id for memory).
     """
 
     # 1) PDF bytes
@@ -109,38 +151,53 @@ def process_pdf_upload(uploaded_file, run_relations: bool = True):
 
     # 2) Full text from PDF
     full_text = extract_text_from_pdf_bytes(pdf_bytes)
+    if not full_text:
+        raise ValueError("Could not extract text from PDF (it might be empty or scanned images).")
 
-    # 3) Summary with Gemini
+    # 3) Summarize with Gemini
+    log.info("Attempting to summarize PDF with Gemini...")
     summary = summarize_with_gemini(full_text)
 
-    # 4) Save TXT (both summary + full text)
+    # 4) Determine Target Text (Fallback Logic)
+    target_text = summary
+    used_fallback = False
+    
+    if not summary or len(summary) < 50:
+        log.warning("Gemini summarization failed or returned too little text. Falling back to FULL TEXT extraction.")
+        target_text = full_text
+        used_fallback = True
+    else:
+        log.info("Gemini summary generated successfully.")
+
+    # 5) Save TXT
     os.makedirs(os.path.join("data", "txt"), exist_ok=True)
     file_stem = os.path.splitext(uploaded_file.name)[0]
     txt_filename = f"{file_stem}_{uuid.uuid4().hex[:8]}.txt"
     txt_path = os.path.join("data", "txt", txt_filename)
 
     with open(txt_path, "w", encoding="utf-8") as f:
-        f.write("=== SUMMARY (used for KG) ===\n")
-        f.write(summary)
-        f.write("\n\n=== FULL TEXT (for reference) ===\n")
+        f.write("=== PROCESSING MODE ===\n")
+        f.write(f"Used Fallback (Full Text): {used_fallback}\n\n")
+        f.write("=== TARGET TEXT (Used for Graph) ===\n")
+        f.write(target_text)
+        f.write("\n\n=== ORIGINAL FULL TEXT ===\n")
         f.write(full_text)
 
-    # 5) Build KG from the SUMMARY only (fast mode)
-    target_text = summary
-
+    # 6) Build KG from the Target Text
     chunks = chunk_tokens(target_text)
+    
+    log.info(f"Processing {len(chunks)} chunks for graph extraction...")
+    
     all_entities: list = []
     all_relations: list = []
 
     for i, chunk in enumerate(chunks):
-        chunk_id = f"pdf_summary_chunk_{uuid.uuid4().hex[:8]}"
+        chunk_id = f"pdf_chunk_{uuid.uuid4().hex[:8]}"
 
-        # entities + base relations
         graph_data = extract_graph(chunk)
         entities = graph_data.get("entities", [])
         base_relations = graph_data.get("relations", [])
 
-        # optional refined relations
         refined_relations = []
         if run_relations:
             refined_relations = extract_relations(chunk)
@@ -150,11 +207,18 @@ def process_pdf_upload(uploaded_file, run_relations: bool = True):
         all_entities.extend(entities)
         all_relations.extend(relations_chunk)
 
-        # store in Neo4j
-        build_and_store_graph(chunk_id, chunk, entities, relations_chunk)
+        # CHANGE: Pass user_id and filename as source
+        build_and_store_graph(
+            chunk_id, 
+            chunk, 
+            entities, 
+            relations_chunk, 
+            user_id=user_id, 
+            source=f"pdf:{uploaded_file.name}"
+        )
 
     return {
-        "summary": summary,
+        "summary": target_text if not used_fallback else "Summary failed. Used full text.",
         "txt_path": txt_path,
         "total_entities": len(all_entities),
         "total_relations": len(all_relations),

@@ -1,13 +1,15 @@
+# pipeline/llm_client_local.py
 from __future__ import annotations
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 import logging
 import time
-import re, json
 
 from llama_cpp import Llama
 from config.config import load_config
-from json_repair import repair_json
+
+# NEW: Import the robust parsers
+from pipeline.json_utils import parse_llm_json_list, parse_llm_graph
 
 _cfg = load_config()
 _model: Optional[Llama] = None
@@ -47,17 +49,13 @@ def _get_model() -> Llama:
     return _model
 
 
-def generate_json(prompt: str, max_tokens: int = 1024):
+def generate_json(prompt: str, max_tokens: int = 1024) -> Any:
     """
-    Generate raw text from LLM and return repaired JSON.
-    This function handles:
-    - JSON inside text
-    - truncated JSON (missing closing brackets)
-    - malformed arrays/objects
-    - trailing commas
-    - extra commentary
+    Generate raw text from LLM and return robustly parsed JSON.
+    Uses json_utils to handle missing brackets, extra text, etc.
     """
     llm = _get_model()
+    # Mistral v0.1 specific formatting (adapt if using different model)
     full_prompt = f"[INST] {prompt} [/INST]"
 
     # Generate output
@@ -66,48 +64,22 @@ def generate_json(prompt: str, max_tokens: int = 1024):
 
     log.info(f"Model generation completed, output length={len(text)} chars")
     
-    # Optional debug print
-    # print("=== RAW MODEL OUTPUT ===")
-    # print(text)
-    # print("=========================")
-
-    # Strategy 1: Attempt direct repair of the whole text
-    # json_repair is very good at adding missing ']' or '}' automatically
+    # 1. Try to parse as a specific graph structure (entities + relations)
+    #    This handles cases where the model returns { "entities": [...], "relations": [...] }
+    #    or just a list of mixed objects.
     try:
-        decoded = repair_json(text, return_objects=True)
-        if decoded:
-            return decoded
-    except:
+        graph_res = parse_llm_graph(text)
+        # heuristic: if we got results in either bucket, assume it was graph-like
+        if graph_res["entities"] or graph_res["relations"]:
+            return graph_res
+    except Exception:
         pass
 
-    # Strategy 2: Extract from first '[' to the very end of the string
-    # This handles cases where the model starts a list but gets cut off.
-    # We ignore the missing ']' and let repair_json fix it.
-    if "[" in text:
-        start_idx = text.find("[")
-        candidate = text[start_idx:] # Take everything from [ onwards
-        try:
-            return repair_json(candidate, return_objects=True)
-        except:
-            pass
-            
-    # Strategy 3: Extract from first '{' (for single objects)
-    if "{" in text:
-        start_idx = text.find("{")
-        candidate = text[start_idx:]
-        try:
-            return repair_json(candidate, return_objects=True)
-        except:
-            pass
-
-    # Strategy 4: Fallback Regex (The old strict way)
-    # Only looks for content inside matched brackets, ignoring outer noise
+    # 2. Fallback: parse as a generic list of objects
+    #    Useful if the prompt requested just "a list of relations"
     try:
-        m = re.search(r'(\[.*\]|\{.*\})', text, re.S)
-        if m:
-            return repair_json(m.group(1), return_objects=True)
-    except:
-        pass
-
-    log.error("JSON extraction failed; returning empty list/dict to prevent crash.")
-    return []
+        list_res = parse_llm_json_list(text)
+        return list_res
+    except Exception as e:
+        log.error(f"JSON extraction failed completely: {e}")
+        return []

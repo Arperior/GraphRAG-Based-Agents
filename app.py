@@ -29,6 +29,9 @@ from pipeline.memory import (
 from pipeline.clustering import run_leiden, summarize_communities
 from pipeline.llm_client_gemini import gemini_complete
 
+# NEW: PDF Processing Import
+from pipeline.pdf_utils import process_pdf_upload
+
 
 # ============================================================================
 # STREAMLIT CONFIG
@@ -97,69 +100,113 @@ if "chat_history" not in st.session_state:
 # ============================================================================
 # INGESTION PANEL
 # ============================================================================
-with st.expander("Ingest Text Into Graph", expanded=False):
-    st.markdown("Paste text → chunk → extract entities & relations → Neo4j")
+with st.expander("Ingest Data Into Graph", expanded=False):
+    
+    # We use tabs to switch between raw text paste and PDF upload
+    tab1, tab2 = st.tabs(["Text Input", "PDF Upload"])
 
-    text_input = st.text_area("Input text", height=200)
-    use_rel = st.checkbox("Enable relation extraction", value=True)
+    # ------------------------------------------------------------------------
+    # TAB 1: RAW TEXT INPUT
+    # ------------------------------------------------------------------------
+    with tab1:
+        st.markdown("Paste text → chunk → extract entities & relations → Neo4j")
 
-if st.button("Ingest"):
-        if not text_input.strip():
-            st.warning("Please enter text")
-        else:
-            chunks = chunk_tokens(text_input)
-            
-            # Progress bar for better UI feedback on multiple chunks
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            
-            ent_total = 0
-            rel_total = 0
-            failed_chunks = 0
+        text_input = st.text_area("Input text", height=200)
+        use_rel_text = st.checkbox("Enable relation extraction (Text)", value=True)
 
-            for i, c in enumerate(chunks):
-                status_text.text(f"Processing chunk {i+1}/{len(chunks)}...")
-                chunk_id = f"chunk_{uuid.uuid4().hex[:8]}"
-
-                try:
-                    # 1. Extract
-                    data = extract_graph(c)
-                    entities = data.get("entities", [])
-                    base_rel = data.get("relations", [])
-
-                    # 2. Refine Relations (Protected against crash)
-                    refined = []
-                    if use_rel:
-                        try:
-                            refined = extract_relations_from_text(c)
-                        except Exception as e:
-                            log.error(f"Relation extraction skipped for {chunk_id}: {e}")
-                    
-                    relations = base_rel + refined
-
-                    # 3. Build & Store (Protected against crash)
-                    build_and_store_graph(chunk_id, c, entities, relations, user_id=USER_ID)
-
-                    ent_total += len(entities)
-                    rel_total += len(relations)
-
-                except Exception as e:
-                    failed_chunks += 1
-                    log.error(f"CRITICAL: Failed to ingest chunk {chunk_id}: {e}", exc_info=True)
-                    st.error(f"Chunk {i+1} failed: {e}")
-                
-                # Update progress
-                progress_bar.progress((i + 1) / len(chunks))
-
-            status_text.text("Done!")
-            
-            if failed_chunks > 0:
-                st.warning(f"Ingestion finished with {failed_chunks} failures.")
+        if st.button("Ingest Text"):
+            if not text_input.strip():
+                st.warning("Please enter text")
             else:
-                st.success("Ingestion complete!")
-            
-            st.write(f"Entities added: {ent_total}")
-            st.write(f"Relations added: {rel_total}")
+                chunks = chunk_tokens(text_input)
+                
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                ent_total = 0
+                rel_total = 0
+                failed_chunks = 0
+
+                for i, c in enumerate(chunks):
+                    status_text.text(f"Processing chunk {i+1}/{len(chunks)}...")
+                    chunk_id = f"chunk_{uuid.uuid4().hex[:8]}"
+
+                    try:
+                        # 1. Extract Entities
+                        data = extract_graph(c)
+                        entities = data.get("entities", [])
+                        base_rel = data.get("relations", [])
+
+                        # 2. Refine Relations (Protected against crash)
+                        refined = []
+                        if use_rel_text:
+                            try:
+                                refined = extract_relations_from_text(c)
+                            except Exception as e:
+                                log.error(f"Relation extraction skipped for {chunk_id}: {e}")
+                        
+                        relations = base_rel + refined
+
+                        # 3. Build & Store (Protected against crash)
+                        build_and_store_graph(chunk_id, c, entities, relations, user_id=USER_ID)
+
+                        ent_total += len(entities)
+                        rel_total += len(relations)
+
+                    except Exception as e:
+                        failed_chunks += 1
+                        log.error(f"CRITICAL: Failed to ingest chunk {chunk_id}: {e}", exc_info=True)
+                        st.error(f"Chunk {i+1} failed: {e}")
+                    
+                    # Update progress
+                    progress_bar.progress((i + 1) / len(chunks))
+
+                status_text.text("Done!")
+                
+                if failed_chunks > 0:
+                    st.warning(f"Ingestion finished with {failed_chunks} failures.")
+                else:
+                    st.success("Ingestion complete!")
+                
+                st.write(f"Entities added: {ent_total}")
+                st.write(f"Relations added: {rel_total}")
+
+    # ------------------------------------------------------------------------
+    # TAB 2: PDF UPLOAD
+    # ------------------------------------------------------------------------
+    with tab2:
+        st.markdown("""
+        **PDF Processing Pipeline:**
+        1. Extract Text
+        2. **Summarize** via Gemini (to reduce noise & cost)
+        3. Extract Graph from Summary
+        """)
+        
+        uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
+        use_rel_pdf = st.checkbox("Enable relation extraction (PDF)", value=True)
+        
+        if st.button("Process PDF"):
+            if uploaded_file:
+                with st.spinner("Analyzing PDF... this uses Gemini for summarization..."):
+                    try:
+                        # process_pdf_upload handles the full cycle: 
+                        # read -> summarize -> chunk -> extract -> store
+                        result = process_pdf_upload(uploaded_file, run_relations=use_rel_pdf,user_id=USER_ID)
+                        
+                        st.success(f"PDF Processed! Saved reference text to: `{result['txt_path']}`")
+                        
+                        col1, col2 = st.columns(2)
+                        col1.metric("Entities Added", result['total_entities'])
+                        col2.metric("Relations Added", result['total_relations'])
+                        
+                        with st.expander("View Generated Summary (Used for Graph)"):
+                            st.markdown(result['summary'])
+                            
+                    except Exception as e:
+                        st.error(f"PDF Processing failed: {e}")
+                        log.error(f"PDF Processing failed: {e}", exc_info=True)
+            else:
+                st.warning("Please upload a PDF file first.")
 
 
 # ============================================================================
@@ -229,12 +276,14 @@ with st.expander("User Memory", expanded=False):
 # ============================================================================
 with st.expander("Communities & Leiden", expanded=False):
 
-    if st.button("Run Leiden clustering"):
-        n = run_leiden()
-        st.success(f"Leiden complete — {n} communities")
+    if st.button("Run Leiden clustering (User-Scoped)"):
+        # UPDATED: Pass user_id
+        n = run_leiden(user_id=USER_ID)
+        st.success(f"Leiden complete — {n} communities (for user {USER_ID})")
 
     if st.button("View community summaries (cached)"):
-        summaries = summarize_communities(force_refresh=False)
+        # UPDATED: Pass user_id to only fetch relevant communities
+        summaries = summarize_communities(force_refresh=False, user_id=USER_ID)
         if not summaries:
             st.info("No summaries exist yet.")
         else:
@@ -243,5 +292,6 @@ with st.expander("Communities & Leiden", expanded=False):
                 st.write(txt)
 
     if st.button("Regenerate all community summaries (Gemini)"):
-        summaries = summarize_communities(force_refresh=True)
+        # UPDATED: Pass user_id
+        summaries = summarize_communities(force_refresh=True, user_id=USER_ID)
         st.success(f"Regenerated {len(summaries)} summaries.")

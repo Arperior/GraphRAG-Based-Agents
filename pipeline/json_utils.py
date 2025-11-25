@@ -25,17 +25,11 @@ def _fix_trailing_commas(s: str) -> str:
 def parse_llm_json_list(text: str) -> List[Dict[str, Any]]:
     """
     Parse model output that *should* represent a JSON array of objects.
-
-    Handles:
-      - Proper JSON list:       [ {...}, {...} ]
-      - Single dict:            { ... }
-      - Many dicts w/out '[]':  { ... }, { ... }, { ... }
-      - JSON embedded in extra text
     """
     if not isinstance(text, str) or not text.strip():
         return []
 
-    # -------- 1) direct json.loads on the whole text --------
+    # 1) direct json.loads on the whole text
     try:
         parsed = json.loads(text)
         if isinstance(parsed, list):
@@ -64,11 +58,7 @@ def parse_llm_json_list(text: str) -> List[Dict[str, Any]]:
 
     results: List[Dict[str, Any]] = []
 
-    # -------- 2) MANY { ... } OBJECTS WITHOUT [] --------
-    # e.g.
-    #   { ... },
-    #   { ... },
-    #   { ... }
+    # 2) MANY { ... } OBJECTS WITHOUT []
     object_blocks = re.findall(r"\{[\s\S]*?\}", text)
     if len(object_blocks) > 1:
         for block in object_blocks:
@@ -78,11 +68,10 @@ def parse_llm_json_list(text: str) -> List[Dict[str, Any]]:
         if results:
             return results
 
-    # -------- 3) First JSON block (could be [ ... ] or { ... }) --------
+    # 3) First JSON block (could be [ ... ] or { ... })
     block = _find_json_block(text)
     if block:
         block = block.strip()
-        # If it's not an array already, wrap in []
         candidate = block
         if candidate.startswith("{") and not candidate.strip().startswith("["):
             candidate = "[" + candidate + "]"
@@ -106,7 +95,6 @@ def parse_llm_json_list(text: str) -> List[Dict[str, Any]]:
         except Exception:
             pass
 
-    # -------- 4) nothing worked --------
     return results
 
 
@@ -114,10 +102,7 @@ def _split_items_into_entities_relations(
     items: List[Dict[str, Any]]
 ) -> Dict[str, List[Dict[str, Any]]]:
     """
-    Heuristic splitter:
-    - if an item has 'source' and 'target' → treat as relation
-    - if it has 'name' → treat as entity
-    - else → default to entity
+    Heuristic splitter for mixed lists.
     """
     entities: List[Dict[str, Any]] = []
     relations: List[Dict[str, Any]] = []
@@ -138,15 +123,7 @@ def _split_items_into_entities_relations(
 def parse_llm_graph(text: str) -> Dict[str, List[Dict[str, Any]]]:
     """
     Parse model output that should represent a graph.
-
-    Handles:
-      - proper object: { "entities": [...], "relations": [...] }
-      - list of entity or relation objects: [ {...}, {...} ]
-      - many bare objects: { ... }, { ... }, ...
-      - JSON embedded within other text
-
-    Always returns:
-      { "entities": [...], "relations": [...] }
+    Always returns: { "entities": [...], "relations": [...] }
     """
     result: Dict[str, List[Dict[str, Any]]] = {
         "entities": [],
@@ -167,7 +144,7 @@ def parse_llm_graph(text: str) -> Dict[str, List[Dict[str, Any]]]:
             except Exception:
                 return None
 
-    # ---- 1) direct decode ----
+    # 1) direct decode
     parsed = _try_decode(text)
     if isinstance(parsed, dict):
         ents = parsed.get("entities")
@@ -186,10 +163,9 @@ def parse_llm_graph(text: str) -> Dict[str, List[Dict[str, Any]]]:
             [x for x in parsed if isinstance(x, dict)]
         )
 
-    # ---- 2) try via parse_llm_json_list (many objects / embedded) ----
+    # 2) try via parse_llm_json_list (many objects / embedded)
     items = parse_llm_json_list(text)
     if items:
         return _split_items_into_entities_relations(items)
 
-    # ---- 3) last resort ----
     return result
