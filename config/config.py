@@ -35,8 +35,8 @@ class LocalLLMConfig:
     # GGUF dir + filename (your setup: models\...\mistral-7b-instruct-v0.1.Q4_K_M.gguf)
     model_dir: Path
     model_file: str
-    n_ctx: int = 4096
-    n_gpu_layers: int = 32  
+    n_ctx: int = 8192
+    n_gpu_layers: int = 40  
     verbose: bool = True
 
 @dataclass(frozen=True)

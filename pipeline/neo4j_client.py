@@ -31,7 +31,8 @@ def init_indexes():
     cyphers = [
         "CREATE CONSTRAINT entity_name_unique IF NOT EXISTS FOR (e:Entity) REQUIRE e.name IS UNIQUE",
         "CREATE INDEX chunk_id_idx IF NOT EXISTS FOR (c:Chunk) ON (c.id)",
-        "CREATE INDEX community_idx IF NOT EXISTS FOR (c:Community) ON (c.id)"
+        "CREATE INDEX community_idx IF NOT EXISTS FOR (c:Community) ON (c.id)",
+        "CREATE INDEX user_id_idx IF NOT EXISTS FOR (u:User) ON (u.id)"
     ]
     with _driver.session() as s:
         for c in cyphers:
@@ -61,68 +62,118 @@ def check_apoc() -> bool:
         return False
 
 
-def store_chunk_with_graph(chunk: Chunk | dict, entities: List[Dict] | List[str], relations: List[Dict]):
+def store_chunk_with_graph(
+    chunk: Chunk | dict,
+    user_id: str | None,
+    entities: List[Dict] | List[str],
+    relations: List[Dict]
+):
     """
-    Efficiently insert one Chunk, its Entities, and Relations in a single transaction using UNWIND.
+    Insert one Chunk + Entities + Relations into Neo4j.
+    Optionally attach (User)-[:INTERESTED_IN]->(Chunk) when user_id provided.
+
+    Notes:
+      - relations: list of dicts with keys: src, tgt, relation, evidence, confidence
+      - we MERGE relation edges on the relation property too so distinct relation types
+        between the same two entities become separate edges.
     """
     if isinstance(chunk, dict):
         chunk = Chunk(**chunk)
 
-    ent_dicts = [
-        e if isinstance(e, dict) else {"name": e, "type": "UNKNOWN", "description": ""}
-        for e in entities if e
-    ]
+    # normalize entities
+    ent_dicts = []
+    for e in entities or []:
+        if not e:
+            continue
+        if isinstance(e, dict):
+            name = e.get("name", "").strip()
+            if not name:
+                continue
+            ent_dicts.append({
+                "name": name,
+                "type": e.get("type", "unknown"),
+                "description": e.get("description", "")
+            })
+        else:
+            ent_dicts.append({
+                "name": str(e).strip(),
+                "type": "unknown",
+                "description": ""
+            })
 
-    rel_dicts = [
-        {
-            "src": r.get("source"),
-            "tgt": r.get("target"),
-            "rel": r.get("relation", "RELATED_TO"),
-            "ev": r.get("evidence", ""),
-            "conf": float(r.get("confidence", 1.0) or 1.0),
-        }
-        for r in relations if r.get("source") and r.get("target")
-    ]
+    # normalize relations
+    rel_dicts = []
+    for r in relations or []:
+        src = str(r.get("src") or r.get("source") or "").strip()
+        tgt = str(r.get("tgt") or r.get("target") or "").strip()
+        if not src or not tgt:
+            continue
+
+        rel_dicts.append({
+            "src": src,
+            "tgt": tgt,
+            "relation": r.get("relation", "RELATED_TO"),
+            "evidence": r.get("evidence", ""),
+            "confidence": float(r.get("confidence", 1.0) or 1.0),
+        })
 
     log.info(f"Storing chunk {chunk.id}: {len(ent_dicts)} entities, {len(rel_dicts)} relations")
 
-    q = """
+    ###########################################################################
+    # CYPHER: create chunk, entities, provenance (MENTIONED_IN) and RELATION edges
+    ###########################################################################
+    q_main = """
     MERGE (c:Chunk {id:$cid})
-      SET c.text=$text, c.source=$source, c.created_at=timestamp()
+      SET c.text=$text,
+          c.source=$source,
+          c.created_at=timestamp()
     WITH c
     UNWIND $entities AS e
       MERGE (n:Entity {name:e.name})
-        ON CREATE SET n.type=e.type, n.description=e.description, n.first_seen=timestamp()
+        ON CREATE SET n.type=e.type,
+                      n.description=e.description,
+                      n.first_seen=timestamp()
       MERGE (n)-[:MENTIONED_IN]->(c)
     WITH c
     UNWIND $relations AS r
       MERGE (a:Entity {name:r.src})
       MERGE (b:Entity {name:r.tgt})
-      MERGE (a)-[rel:RELATION {type:r.rel, chunk_id:$cid}]->(b)
-        SET rel.confidence=r.conf, rel.evidence=r.ev
+      MERGE (a)-[rel:RELATION {relation:r.relation}]->(b)
+      SET rel.evidence = r.evidence,
+          rel.confidence = r.confidence,
+          rel.last_seen = timestamp()
+    """
+
+    q_interest = """
+    MERGE (u:User {id:$uid})
+    MERGE (c:Chunk {id:$cid})
+    MERGE (u)-[r:INTERESTED_IN]->(c)
+      ON CREATE SET r.count = 1, r.last_seen = timestamp()
+      ON MATCH SET  r.count = coalesce(r.count,0) + 1,
+                    r.last_seen = timestamp()
     """
 
     try:
         with _driver.session() as s:
             s.run(
-                q,
+                q_main,
                 cid=chunk.id,
                 text=chunk.text,
                 source=chunk.source,
                 entities=ent_dicts,
                 relations=rel_dicts
             )
+
+            if user_id:
+                s.run(q_interest, uid=str(user_id).strip(), cid=chunk.id)
+
         log.info(f"Chunk {chunk.id} stored successfully in Neo4j.")
     except Exception as e:
-        log.error(f"Failed to store chunk {chunk.id}: {e}")
+        log.error(f"Failed to store chunk {chunk.id}: {e}", exc_info=True)
         raise
 
 
 def search_entities_contains(q: str, limit: int | None = None) -> List[Dict]:
-    """
-    Search for entities whose names partially match a given string.
-    This is user-facing, so it uses retrieval_search_limit from config.
-    """
     limit = limit or _cfg.retrieval_search_limit
     log.info(f"Searching entities containing '{q}' (limit={limit})")
 
@@ -136,7 +187,6 @@ def search_entities_contains(q: str, limit: int | None = None) -> List[Dict]:
                 q=q, limit=limit
             )
             data = res.data()
-            log.info(f"Found {len(data)} matching entities for query '{q}'.")
             return data
     except Exception as e:
         log.error(f"Entity search failed for query '{q}': {e}")
@@ -146,14 +196,16 @@ def search_entities_contains(q: str, limit: int | None = None) -> List[Dict]:
 def k_hop_chunks(entity_name: str, k: int = 1, limit: int | None = None) -> List[Dict]:
     """
     Returns chunk evidence k hops away from an entity.
-    Uses APOC for subgraph expansion.
-    This is an internal traversal — uses neo4j_query_limit from config.
+    Tries APOC path expansion, but falls back to a pure-Cypher variable-length traversal
+    if APOC is not available.
+    Case-insensitive entity match (toLower compare).
     """
     limit = limit or _cfg.neo4j_query_limit
     log.info(f"Fetching {k}-hop neighborhood for '{entity_name}' (limit={limit})")
 
-    q = """
-    MATCH (e:Entity {name:$name})
+    q_apoc = """
+    MATCH (e:Entity)
+    WHERE toLower(e.name) = toLower($name)
     CALL apoc.path.subgraphNodes(e, {relationshipFilter:'RELATION>', maxLevel:$k})
     YIELD node
     WITH DISTINCT node WHERE node:Chunk
@@ -161,12 +213,28 @@ def k_hop_chunks(entity_name: str, k: int = 1, limit: int | None = None) -> List
     LIMIT $limit
     """
 
+    q_fallback = """
+    MATCH (e:Entity)
+    WHERE toLower(e.name) = toLower($name)
+    MATCH (e)-[:RELATION*1..$k]->(x:Entity)
+    MATCH (x)-[:MENTIONED_IN]->(c:Chunk)
+    RETURN DISTINCT c.id as cid, c.text as text
+    LIMIT $limit
+    """
+
     try:
         with _driver.session() as s:
-            res = s.run(q, name=entity_name, k=k, limit=limit)
-            data = res.data()
-            log.info(f"Retrieved {len(data)} chunks for '{entity_name}' (k={k})")
-            return data
+            try:
+                res = s.run(q_apoc, name=entity_name, k=k, limit=limit)
+                data = res.data()
+                log.info(f"APOC: Retrieved {len(data)} chunks for '{entity_name}' (k={k})")
+                return data
+            except Exception as inner:
+                log.warning(f"APOC query failed, falling back to pure-cypher: {inner}")
+                res = s.run(q_fallback, name=entity_name, k=k, limit=limit)
+                data = res.data()
+                log.info(f"Fallback: Retrieved {len(data)} chunks for '{entity_name}' (k={k})")
+                return data
     except Exception as e:
-        log.error(f"Failed k-hop retrieval for '{entity_name}': {e}")
+        log.error(f"Failed k-hop retrieval for '{entity_name}': {e}", exc_info=True)
         return []

@@ -6,29 +6,50 @@
 6. If security error run : Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 7. Once it shows name of venv like (venv) then :
     - IN CASE OF PIP ERROR: python -m ensurepip --upgrade
-    - uv pip install graphrag openai spacy nltk python-dotenv poethepoet
+    - uv pip install graphrag openai spacy nltk python-dotenv poethepoet requests python-Levenshtein PyPDF@ tiktoken google-genai
     - python -m spacy download en_core_web_md
-8. Once done, execute : " graphrag init --root . "
+8. Once done, execute order 66.
 9. Install JDK 21 :- https://docs.oracle.com/en/java/javase/24/install/installation-jdk-microsoft-windows-platforms.html#GUID-A7E27B90-A28D-4237-9383-A58B416071CA
 10. Download Neo4j :- https://neo4j.com/docs/operations-manual/current/installation/windows/
 11. Install CE(not as service) as listed in the installation guide.
-12.Download APOC JAR from GitHub (matching Neo4j version).
-13.Copy APOC JAR to ...\Neo4jDesktop2\Data\dbmss\<dbms-id>\plugins\
-14.Edit neo4j.conf → add:
+12. Download APOC JAR from GitHub (matching Neo4j version).
+13. Copy APOC JAR to ...\Neo4jDesktop2\Data\dbmss\<dbms-id>\plugins\
+14. Edit neo4j.conf → add:
     -dbms.security.procedures.unrestricted=apoc.*,gds.*
     -dbms.security.procedures.allowlist=apoc.*,gds.*
     -apoc.import.file.enabled=true
     -apoc.export.file.enabled=true
     -apoc.trigger.enabled=true
     -dbms.default_database=neo4j
-15.Restart Neo4j Desktop.
-16.Open Neo4j Browser → Run: RETURN apoc.version();
-17.Download Mistral model (quantized GGUF version):
+15. Restart Neo4j Desktop.
+16. Open Neo4j Browser → Run: RETURN apoc.version();
+    Run these commands to setup schema:
+        // Unique user IDs
+        CREATE CONSTRAINT unique_user IF NOT EXISTS
+        FOR (u:User) REQUIRE u.id IS UNIQUE;
+        // Query timestamp uniqueness
+        CREATE CONSTRAINT unique_query_created IF NOT EXISTS
+        FOR (q:Query) REQUIRE q.created IS UNIQUE;
+        // Answer timestamp uniqueness
+        CREATE CONSTRAINT unique_answer_created IF NOT EXISTS
+        FOR (a:Answer) REQUIRE a.created IS UNIQUE;
+        // Entity name unique 
+        CREATE CONSTRAINT unique_entity_name IF NOT EXISTS
+        FOR (e:Entity) REQUIRE e.name IS UNIQUE;
+        // Chunk IDs unique
+        CREATE CONSTRAINT unique_chunk_id IF NOT EXISTS
+        FOR (c:Chunk) REQUIRE c.id IS UNIQUE;
+        // Community id uniqueness
+        CREATE CONSTRAINT community_id_unique IF NOT EXISTS
+        FOR (com:Community) REQUIRE com.id IS UNIQUE;
+        CREATE INDEX user_last_seen_idx IF NOT EXISTS
+        FOR (u:User) ON (u.last_seen);
+17. Download Mistral model (quantized GGUF version):
     -Go to: https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF
     -Download file: mistral-7b-instruct-v0.1.Q4_K_M.gguf
     -Create folder: D:\models\Mistral-7B-Instruct-v0.1-GGUF\
     -Move the model file there.
-18.Create .env in project root with:
+18. Create .env in project root with:
     -NEO4J_URI=bolt://localhost:7687
     -NEO4J_USER=neo4j
     -NEO4J_PASSWORD=your_password
@@ -38,6 +59,10 @@
     -LEIDEN_RESOLUTION=1.0
     -RETRIEVAL_SEARCH_LIMIT=10
     -NEO4J_QUERY_LIMIT=100
-19.Test APOC in Python: python -m pipeline.neo4j_client
+19. Test APOC in Python: python -m pipeline.neo4j_client
 20. Run mistral test: testing.py
-21.Run app: streamlit run app.py
+21. Run app: 
+    -start neo4j server: 
+        cd $env:NEO4J_HOME\bin
+        .\neo4j console
+    -streamlit run app.py

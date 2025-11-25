@@ -28,3 +28,7 @@ Streamlit App (UI)
    ├── llm_client_gemini.py → answer synthesis
    │
    └── logs/ + config/ (core system backbone)
+
+Tuesday:
+
+Retrieval + Graph_Builder + Memory + Neo4j_Client theek karwana for retrieval 

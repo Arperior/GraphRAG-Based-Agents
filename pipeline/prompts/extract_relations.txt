@@ -1,17 +1,23 @@
-# ======================= Relation Extraction (Simplified for Mistral) =======================
+# ======================= Relation Extraction (Optimized) =======================
 
-Extract relationships between entities from the text below.
+Extract relationships between entities.
+Return ONLY a valid JSON array.
 
-Each relationship should be a JSON object like this:
-{
-  "source": "<entity 1>",
-  "target": "<entity 2>",
-  "relation": "<type of relation>",
-  "evidence": "<sentence or phrase that supports this relation>",
-  "confidence": <float between 0 and 1>
-}
+Rules:
+1. "evidence" must be a SHORT snippet (Max 12 words).
+2. "confidence" is a float (0.0 to 1.0).
+3. No extra text or explanations.
 
-Return ONLY a JSON array. Do not include commentary.
+JSON Structure:
+[
+  {
+    "source": "Entity1",
+    "target": "Entity2",
+    "relation": "RELATION_TYPE",
+    "evidence": "short text snippet",
+    "confidence": 0.9
+  }
+]
 
 Text:
 {input_text}

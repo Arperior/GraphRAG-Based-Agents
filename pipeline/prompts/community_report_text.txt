@@ -1,18 +1,11 @@
-# ======================= GraphRAG Long-form Report Prompt =======================
-
-You are an expert analyst synthesizing findings from multiple clusters of a knowledge graph.
-
-Goal:
-Write a coherent narrative that connects all community summaries into a single report.
-
+# ======================= GraphRAG Community Summary Prompt =======================
+You are an expert analyst. Given the relations within a community, produce a brief summary of the thematic focus of the community.
 Rules:
-- Remove redundancy.
-- Retain data references (use [Cluster X]).
-- Use markdown sections for clarity.
+- Keep it short (3-6 sentences).
+- Mention characteristic entities or relations (use names exactly).
+- If no edges exist, note that the community is sparse.
+- Do not invent facts.
+- Provide the summary as plain text.
 
-Limit: {max_words} words.
-
---- Community Summaries ---
+--- Community Relations ---
 {community_reports}
-
---- Response ---

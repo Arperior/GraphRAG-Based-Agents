@@ -1,0 +1,24 @@
+Create a structured plan for answering the user's question based ONLY on the evidence.
+
+If:
+- Graph evidence exists → use entities and k-hop relations.
+- Memory evidence exists → treat it as the user's personal notes.
+- Fallback evidence exists → treat it as general context with uncertainty.
+
+Your plan must include:
+1. The main idea from evidence.
+2. Supporting details from evidence.
+3. Missing information or uncertainties.
+4. A safe answer strategy.
+
+Evidence:
+{evidence}
+
+Question:
+{question}
+
+User Memory:
+{user_memory}
+
+Working Memory:
+{working_memory}

@@ -10,7 +10,7 @@ from pipeline.llm_client_local import generate_json
 _cfg = load_config()
 log = logging.getLogger("entity_extraction")
 
-# Load spaCy for candidate entity seeding
+# Load spaCy for candidate entity seeding (optional)
 try:
     _nlp = spacy.load("en_core_web_sm")
 except Exception:
@@ -25,6 +25,79 @@ def spacy_candidates(text: str) -> List[str]:
     if not ents:
         ents = [c.text.strip() for c in _nlp(text).noun_chunks]
     return dedup_keep_order([e for e in ents if e])
+
+
+def _normalize_entities(raw_entities) -> List[Dict]:
+    """
+    Ensure entities are list of dicts with at least 'name'. Fill defaults.
+    Accepts: list[str] or list[dict] or single dict.
+    Uses dedup_keep_order from utils to deduplicate.
+    """
+    out = []
+    if isinstance(raw_entities, dict):
+        raw_entities = [raw_entities]
+    if not raw_entities:
+        return []
+
+    for e in raw_entities:
+        if isinstance(e, str):
+            out.append({"name": e.strip(), "type": "UNKNOWN", "description": ""})
+        elif isinstance(e, dict):
+            name = e.get("name") or e.get("id") or e.get("label")
+            if not name:
+                continue
+            out.append({
+                "name": name.strip(),
+                "type": e.get("type", "UNKNOWN"),
+                "description": e.get("description", "") or e.get("desc", "")
+            })
+
+    # deduplicate via utils
+    names = [e["name"] for e in out]
+    keep = dedup_keep_order(names)
+    final = []
+    seen = set()
+    for e in out:
+        if e["name"] in keep and e["name"] not in seen:
+            final.append(e)
+            seen.add(e["name"])
+    return final
+
+
+def _normalize_relations(raw_relations) -> List[Dict]:
+    """
+    Normalize relations to ensure consistent structure.
+    Each relation must contain: source, target, relation, evidence, confidence.
+    """
+    if isinstance(raw_relations, dict):
+        raw_relations = [raw_relations]
+    if not raw_relations:
+        return []
+
+    out = []
+    for r in raw_relations:
+        if isinstance(r, str):
+            # no reliable structure, skip safely
+            continue
+        if not isinstance(r, dict):
+            continue
+
+        src = r.get("source") or r.get("src") or r.get("from")
+        tgt = r.get("target") or r.get("tgt") or r.get("to")
+        rel = r.get("relation") or r.get("rel") or r.get("type") or "RELATED_TO"
+
+        if not src or not tgt:
+            continue
+
+        out.append({
+            "source": str(src).strip(),
+            "target": str(tgt).strip(),
+            "relation": str(rel).strip(),
+            "evidence": r.get("evidence", "") or r.get("text", ""),
+            "confidence": float(r.get("confidence", 1.0) or 1.0)
+        })
+
+    return out
 
 
 def extract_graph(chunk_text: str, entity_types: str = "PERSON,ORGANIZATION,GEO") -> Dict:
@@ -48,13 +121,14 @@ def extract_graph(chunk_text: str, entity_types: str = "PERSON,ORGANIZATION,GEO"
 
         # If model returns a list of entities
         if isinstance(data, list):
-            log.info(f"Extracted {len(data)} entities (no relations).")
-            return {"entities": data, "relations": []}
+            entities = _normalize_entities(data)
+            log.info(f"Extracted {len(entities)} entities (no relations).")
+            return {"entities": entities, "relations": []}
 
         # If model returns structured dict with entities/relations
         elif isinstance(data, dict):
-            entities = data.get("entities", [])
-            relations = data.get("relations", [])
+            entities = _normalize_entities(data.get("entities", []))
+            relations = _normalize_relations(data.get("relations", []))
             log.info(f"Extracted {len(entities)} entities and {len(relations)} relations.")
             return {"entities": entities, "relations": relations}
 
@@ -63,5 +137,5 @@ def extract_graph(chunk_text: str, entity_types: str = "PERSON,ORGANIZATION,GEO"
             return {"entities": [], "relations": []}
 
     except Exception as e:
-        log.error(f"Entity extraction failed: {e}")
+        log.error(f"Entity extraction failed: {e}", exc_info=True)
         return {"entities": [], "relations": []}

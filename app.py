@@ -1,93 +1,247 @@
-# app.py
-import streamlit as st
+"""
+GraphRAG — Ingest + Chat + Memory + Communities
+"""
+
+from __future__ import annotations
 import uuid
 import logging
+import os
+import streamlit as st
 
+# Pipeline imports
 from pipeline.preprocessing import chunk_tokens
 from pipeline.entity_extraction import extract_graph
-from pipeline.relation_extractor import extract_relations
+from pipeline.relation_extractor import extract_relations_from_text
 from pipeline.graph_builder import build_and_store_graph
-from pipeline.neo4j_client import init_indexes, check_apoc
 
-# -------------------------------------------------------------------
-# Configure logging
-# -------------------------------------------------------------------
+from pipeline.neo4j_client import init_indexes, check_apoc
+from pipeline.retrieval import gather_evidence_for_query, synthesize_answer
+
+from pipeline.memory import (
+    ensure_user_exists,
+    store_query_and_answer,
+    list_users,
+    get_user_longterm_memory_text,
+    list_user_memories,
+    clear_user_memory,
+)
+
+from pipeline.clustering import run_leiden, summarize_communities
+from pipeline.llm_client_gemini import gemini_complete
+
+
+# ============================================================================
+# STREAMLIT CONFIG
+# ============================================================================
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 )
+
+st.set_page_config(page_title="GraphRAG Chat", layout="wide")
+st.title("GraphRAG — Contextual Chat")
+
 log = logging.getLogger("app")
 
-# -------------------------------------------------------------------
-# Streamlit Page Setup
-# -------------------------------------------------------------------
-st.set_page_config(page_title="GraphRAG Knowledge Graph Builder", layout="wide")
-st.title("GraphRAG Knowledge Graph Builder")
 
-st.write("Enter or paste your text below to extract entities and relationships and build a Neo4j knowledge graph.")
+# ============================================================================
+# USER SELECTION (SIDEBAR)
+# ============================================================================
+try:
+    default_user = st.secrets.get("user_id", None)
+except Exception:
+    default_user = None
 
-# -------------------------------------------------------------------
-# Initialize Neo4j Connection
-# -------------------------------------------------------------------
+default_user = default_user or os.environ.get("USER_ID", "user_default")
+
+existing_users = list_users(limit=100)
+if default_user not in existing_users:
+    existing_users = [default_user] + existing_users
+
+selected = st.sidebar.selectbox("User ID", existing_users)
+new_user = st.sidebar.text_input("Create new user")
+
+if new_user.strip():
+    selected = new_user.strip()
+
+ensure_user_exists(selected)
+st.session_state["user_id"] = selected
+USER_ID = selected
+
+
+# ============================================================================
+# DATABASE INIT
+# ============================================================================
 if "db_ready" not in st.session_state:
     st.session_state["db_ready"] = False
 
 if not st.session_state["db_ready"]:
-    st.info("Checking Neo4j connection...")
-    apoc_available = check_apoc()
-    if apoc_available:
+    st.info("Connecting to Neo4j...")
+    if check_apoc():
         init_indexes()
+        ensure_user_exists(USER_ID)
         st.session_state["db_ready"] = True
-        st.success("Connected to Neo4j and initialized indexes.")
+        st.success("Neo4j connected.")
     else:
-        st.error("APOC not detected. Please enable APOC in Neo4j plugins before proceeding.")
+        st.error("APOC not detected — enable APOC and restart.")
         st.stop()
 
-# -------------------------------------------------------------------
-# User Input
-# -------------------------------------------------------------------
-input_text = st.text_area("Enter text to process:", height=250, placeholder="Paste or type your text here...")
 
-run_relations = st.checkbox("Run additional relation refinement (slower, more detailed)", value=True)
+# ============================================================================
+# CHAT MEMORY (session-only working memory)
+# ============================================================================
+if "chat_history" not in st.session_state:
+    st.session_state["chat_history"] = []
 
-if st.button("Process Text"):
-    if not input_text.strip():
-        st.warning("Please enter some text before processing.")
-    else:
-        st.info("Processing input text...")
-        chunks = chunk_tokens(input_text)
 
-        all_entities, all_relations = [], []
+# ============================================================================
+# INGESTION PANEL
+# ============================================================================
+with st.expander("Ingest Text Into Graph", expanded=False):
+    st.markdown("Paste text → chunk → extract entities & relations → Neo4j")
 
-        for i, chunk in enumerate(chunks):
-            chunk_id = f"user_chunk_{uuid.uuid4().hex[:8]}"
-            log.info(f"Processing chunk {i+1}/{len(chunks)}: {len(chunk)} characters")
+    text_input = st.text_area("Input text", height=200)
+    use_rel = st.checkbox("Enable relation extraction", value=True)
 
-            # Step 1: Extract entities and base relations
-            graph_data = extract_graph(chunk)
-            entities = graph_data.get("entities", [])
-            base_relations = graph_data.get("relations", [])
-            log.info(f"Extracted {len(entities)} entities and {len(base_relations)} base relations from chunk {chunk_id}")
+if st.button("Ingest"):
+        if not text_input.strip():
+            st.warning("Please enter text")
+        else:
+            chunks = chunk_tokens(text_input)
+            
+            # Progress bar for better UI feedback on multiple chunks
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            ent_total = 0
+            rel_total = 0
+            failed_chunks = 0
 
-            # Step 2: Optionally extract refined relations
-            refined_relations = []
-            if run_relations:
-                refined_relations = extract_relations(chunk)
-                log.info(f"Extracted {len(refined_relations)} refined relations from chunk {chunk_id}")
+            for i, c in enumerate(chunks):
+                status_text.text(f"Processing chunk {i+1}/{len(chunks)}...")
+                chunk_id = f"chunk_{uuid.uuid4().hex[:8]}"
 
-            all_relations_chunk = base_relations + refined_relations
-            all_entities.extend(entities)
-            all_relations.extend(all_relations_chunk)
+                try:
+                    # 1. Extract
+                    data = extract_graph(c)
+                    entities = data.get("entities", [])
+                    base_rel = data.get("relations", [])
 
-            # Step 3: Build and store the combined graph in Neo4j
-            try:
-                build_and_store_graph(chunk_id, chunk, entities, all_relations_chunk)
-                log.info(f"Stored chunk {chunk_id} in Neo4j with {len(entities)} entities and {len(all_relations_chunk)} relations.")
-            except Exception as e:
-                log.error(f"Failed to store chunk {chunk_id}: {e}")
+                    # 2. Refine Relations (Protected against crash)
+                    refined = []
+                    if use_rel:
+                        try:
+                            refined = extract_relations_from_text(c)
+                        except Exception as e:
+                            log.error(f"Relation extraction skipped for {chunk_id}: {e}")
+                    
+                    relations = base_rel + refined
 
-        st.success("Processing complete. Knowledge graph has been built successfully.")
-        st.write(f"Total Entities: {len(all_entities)}")
-        st.write(f"Total Relations: {len(all_relations)}")
+                    # 3. Build & Store (Protected against crash)
+                    build_and_store_graph(chunk_id, c, entities, relations, user_id=USER_ID)
 
-        log.info(f"Total Entities: {len(all_entities)} | Total Relations: {len(all_relations)}")
+                    ent_total += len(entities)
+                    rel_total += len(relations)
+
+                except Exception as e:
+                    failed_chunks += 1
+                    log.error(f"CRITICAL: Failed to ingest chunk {chunk_id}: {e}", exc_info=True)
+                    st.error(f"Chunk {i+1} failed: {e}")
+                
+                # Update progress
+                progress_bar.progress((i + 1) / len(chunks))
+
+            status_text.text("Done!")
+            
+            if failed_chunks > 0:
+                st.warning(f"Ingestion finished with {failed_chunks} failures.")
+            else:
+                st.success("Ingestion complete!")
+            
+            st.write(f"Entities added: {ent_total}")
+            st.write(f"Relations added: {rel_total}")
+
+
+# ============================================================================
+# CHAT PANEL
+# ============================================================================
+st.header("Chat")
+
+# Show history
+for role, msg in st.session_state["chat_history"]:
+    st.chat_message(role).write(msg)
+
+prompt = st.chat_input("Ask anything...")
+
+if prompt:
+    st.session_state["chat_history"].append(("user", prompt))
+
+    # Retrieve evidence for query automatically
+    _, evidence = gather_evidence_for_query(
+        prompt,
+        k_hop=1,
+        per_entity=3,
+        top_entities=4,
+        user_id=USER_ID
+    )
+
+    # Generate final answer
+    answer = synthesize_answer(
+        prompt,
+        evidence,
+        user_id=USER_ID,
+        chat_history=st.session_state["chat_history"],
+        use_plan=False
+    )
+
+    st.session_state["chat_history"].append(("assistant", answer))
+
+    # Save memory
+    store_query_and_answer(USER_ID, prompt, answer)
+
+    st.rerun()
+
+
+# ============================================================================
+# MEMORY PANEL
+# ============================================================================
+with st.expander("User Memory", expanded=False):
+
+    if st.button("Show long-term memory summary"):
+        txt = get_user_longterm_memory_text(USER_ID, limit=40)
+        st.text_area("Memory", txt or "(empty)", height=300)
+
+    if st.button("List memory items"):
+        rows = list_user_memories(USER_ID, limit=100)
+        if not rows:
+            st.info("No memory found.")
+        else:
+            for r in rows:
+                st.write(f"• {r.get('value')}  (ts={r.get('created')})")
+
+    if st.button("Clear memory (danger)"):
+        clear_user_memory(USER_ID)
+        st.success("Memory cleared.")
+
+
+# ============================================================================
+# COMMUNITY / LEIDEN PANEL
+# ============================================================================
+with st.expander("Communities & Leiden", expanded=False):
+
+    if st.button("Run Leiden clustering"):
+        n = run_leiden()
+        st.success(f"Leiden complete — {n} communities")
+
+    if st.button("View community summaries (cached)"):
+        summaries = summarize_communities(force_refresh=False)
+        if not summaries:
+            st.info("No summaries exist yet.")
+        else:
+            for cid, txt in summaries:
+                st.markdown(f"### Community {cid}")
+                st.write(txt)
+
+    if st.button("Regenerate all community summaries (Gemini)"):
+        summaries = summarize_communities(force_refresh=True)
+        st.success(f"Regenerated {len(summaries)} summaries.")

@@ -1,32 +1,23 @@
-# ======================= GraphRAG Extract Graph Prompt =======================
+# ======================= GraphRAG Extract Graph Prompt (Optimized) =======================
 
 Goal:
-Given a text document, identify all entities and relationships among them.
-Output MUST be in valid JSON.
+Identify entities and relationships from the text.
+Output MUST be valid JSON.
 
-Steps:
-1. Extract all entities in the text.
-2. For each entity, extract:
-   - name
-   - type (PERSON, ORGANIZATION, GEO, EVENT, DATE, etc.)
-   - description
+Rules:
+1. Entities: "description" must be VERY SHORT (Max 8 words).
+2. Relations: "evidence" must be a SHORT snippet (Max 12 words).
+3. Do NOT quote full sentences.
+4. Return ONLY valid JSON.
 
-3. For each pair of entities, extract relationships, with:
-   - source
-   - target
-   - relation (UPPERCASE, underscore style, e.g., CAPITAL_OF)
-   - evidence (the text supporting the relation)
-   - confidence (float 0.0–1.0)
-
-Return ONLY valid JSON with the format:
-
+Format:
 {
   "entities": [
     {"name": "Delhi", "type": "GEO", "description": "Capital of India"},
-    {"name": "India", "type": "GEO", "description": "Country in South Asia"}
+    {"name": "Modi", "type": "PERSON", "description": "Prime Minister"}
   ],
   "relations": [
-    {"source": "Delhi", "target": "India", "relation": "CAPITAL_OF", "evidence": "Delhi is the capital of India.", "confidence": 1.0}
+    {"source": "Delhi", "target": "Modi", "relation": "LOCATED_IN", "evidence": "works in Delhi", "confidence": 1.0}
   ]
 }
 

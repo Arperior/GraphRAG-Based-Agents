@@ -7,6 +7,7 @@ import re, json
 
 from llama_cpp import Llama
 from config.config import load_config
+from json_repair import repair_json
 
 _cfg = load_config()
 _model: Optional[Llama] = None
@@ -46,44 +47,67 @@ def _get_model() -> Llama:
     return _model
 
 
-def generate_json(prompt: str, max_tokens: int = 256) -> dict | list | str:
+def generate_json(prompt: str, max_tokens: int = 1024):
+    """
+    Generate raw text from LLM and return repaired JSON.
+    This function handles:
+    - JSON inside text
+    - truncated JSON (missing closing brackets)
+    - malformed arrays/objects
+    - trailing commas
+    - extra commentary
+    """
     llm = _get_model()
-    full_prompt = f"""[INST] You are a precise information extraction model.
-Return ONLY valid JSON. Do not add commentary.
+    full_prompt = f"[INST] {prompt} [/INST]"
 
-{prompt} [/INST]"""
-
-    log.debug(f"Generating JSON with max_tokens={max_tokens}")
-    start = time.time()
-
-    try:
-        out = llm(
-            full_prompt,
-            max_tokens=max_tokens,
-            temperature=0.0,
-            stop=["</s>"],
-        )
-    except Exception as e:
-        log.error(f"LLM generation failed: {e}")
-        return {"error": "generation_failed", "detail": str(e)}
-
-    duration = time.time() - start
+    # Generate output
+    out = llm(full_prompt, max_tokens=max_tokens, temperature=0.0, stop=["</s>"])
     text = out["choices"][0]["text"]
-    print("=== RAW MODEL OUTPUT ===")
-    print(text)
-    print("=========================")
 
-    log.info(f"Model generation completed in {duration:.2f}s, output length={len(text)} chars")
+    log.info(f"Model generation completed, output length={len(text)} chars")
+    
+    # Optional debug print
+    # print("=== RAW MODEL OUTPUT ===")
+    # print(text)
+    # print("=========================")
 
-    m = re.search(r'(\{.*\}|\[.*\])', text, re.S)
-    if not m:
-        log.warning("No valid JSON detected in LLM output")
-        return {"error": "no_json", "raw": text}
-
+    # Strategy 1: Attempt direct repair of the whole text
+    # json_repair is very good at adding missing ']' or '}' automatically
     try:
-        parsed = json.loads(m.group(1))
-        log.debug(f"Successfully parsed JSON: type={type(parsed).__name__}")
-        return parsed
-    except Exception as e:
-        log.error(f"Invalid JSON format: {e}")
-        return {"error": "invalid_json", "raw": text}
+        decoded = repair_json(text, return_objects=True)
+        if decoded:
+            return decoded
+    except:
+        pass
+
+    # Strategy 2: Extract from first '[' to the very end of the string
+    # This handles cases where the model starts a list but gets cut off.
+    # We ignore the missing ']' and let repair_json fix it.
+    if "[" in text:
+        start_idx = text.find("[")
+        candidate = text[start_idx:] # Take everything from [ onwards
+        try:
+            return repair_json(candidate, return_objects=True)
+        except:
+            pass
+            
+    # Strategy 3: Extract from first '{' (for single objects)
+    if "{" in text:
+        start_idx = text.find("{")
+        candidate = text[start_idx:]
+        try:
+            return repair_json(candidate, return_objects=True)
+        except:
+            pass
+
+    # Strategy 4: Fallback Regex (The old strict way)
+    # Only looks for content inside matched brackets, ignoring outer noise
+    try:
+        m = re.search(r'(\[.*\]|\{.*\})', text, re.S)
+        if m:
+            return repair_json(m.group(1), return_objects=True)
+    except:
+        pass
+
+    log.error("JSON extraction failed; returning empty list/dict to prevent crash.")
+    return []

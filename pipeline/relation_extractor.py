@@ -1,65 +1,82 @@
+# pipeline/relation_extractor.py
 from __future__ import annotations
 import logging
 from typing import List, Dict
+
 from config.config import load_config
-from pipeline.utils import read_text
 from pipeline.llm_client_local import generate_json
+from pipeline.utils import read_text
 
 _cfg = load_config()
 log = logging.getLogger("relation_extractor")
 
 
-def normalize_relation_name(name: str) -> str:
+def extract_relations_from_text(text: str) -> List[Dict]:
     """
-    Normalize relation names into uppercase snake-case for Neo4j.
-    Example:
-        "prime minister" → "PRIME_MINISTER_OF"
-        "capital_of" → "CAPITAL_OF"
+    Extract relation triples from a text block using the LLM.
+    Returns a list of dicts with keys:
+      - source
+      - target
+      - relation
+      - evidence
+      - confidence (float)
+    NOTE: This function will not aggressively normalize relation labels;
+    the model's relation string is used as-is (uppercasing can be done downstream if desired).
     """
-    if not name:
-        return "RELATED_TO"
+    prompt_path = _cfg.prompts_dir / "extract_relations.txt"
+    try:
+        tpl = read_text(prompt_path)
+    except Exception:
+        tpl = "Extract relations and return ONLY a JSON array."
 
-    # clean up whitespace, special chars
-    name = name.strip().replace(" ", "_").replace("-", "_").lower()
-
-    # ensure suffix consistency
-    if not name.endswith("_of") and not name.endswith("_to"):
-        name = f"{name}_of"
-
-    return name.upper()
-
-
-def extract_relations(chunk_text: str) -> List[Dict]:
-    """
-    Extract relationships between entities using the local LLM.
-    Expected model output: JSON list of {source, target, relation, evidence, confidence}.
-    """
-    tpl_path = _cfg.prompts_dir / "extract_relations.txt"
-    tpl = read_text(tpl_path)
-
-    prompt = tpl.replace("{input_text}", chunk_text)
+    prompt = tpl.replace("{input_text}", text)
 
     try:
-        log.info("Running relation extraction LLM...")
-        data = generate_json(prompt, max_tokens=512)
-    except Exception as e:
-        log.error(f"Relation extraction failed: {e}")
-        return []
+        # generate_json should return parsed JSON (repaired) from llm_client_local
+        out = generate_json(prompt, max_tokens=2048)
 
-    # Handle possible return types (dict, list, str)
-    if isinstance(data, dict) and "raw" in data:
-        log.warning("Received dict with raw key (legacy mode), skipping parse")
-        return []
-    elif isinstance(data, list):
-        # Normalize relation types for Neo4j
-        for rel in data:
-            if "relation" in rel:
-                rel["relation"] = normalize_relation_name(rel["relation"])
-        log.info(f"Extracted and normalized {len(data)} relations.")
-        return data
-    elif isinstance(data, str):
-        log.warning("Got string output from model, not JSON")
-        return []
-    else:
-        log.warning(f"Unexpected relation extraction output type: {type(data)}")
+        if not out:
+            log.warning("Relation extractor: model returned no output.")
+            return []
+
+        # If the model returns a dict with 'relations' key, handle it
+        if isinstance(out, dict) and "relations" in out:
+            cand = out.get("relations") or []
+        elif isinstance(out, list):
+            cand = out
+        elif isinstance(out, dict):
+            # sometimes the model returns a single dict describing one relation
+            cand = [out]
+        else:
+            log.warning(f"Relation extractor: unexpected output type {type(out)}")
+            return []
+
+        cleaned = []
+        for r in cand:
+            if not isinstance(r, dict):
+                continue
+            src = (r.get("source") or r.get("src") or "").strip()
+            tgt = (r.get("target") or r.get("tgt") or "").strip()
+            rel_label = r.get("relation") or r.get("rel") or r.get("predicate") or ""
+            if not src or not tgt or not rel_label:
+                continue
+            evidence = r.get("evidence", "") or ""
+            try:
+                conf = float(r.get("confidence", 1.0) or 1.0)
+            except Exception:
+                conf = 1.0
+
+            cleaned.append({
+                "source": src,
+                "target": tgt,
+                "relation": rel_label,
+                "evidence": evidence,
+                "confidence": conf
+            })
+
+        log.info(f"Relation extractor returned {len(cleaned)} relations.")
+        return cleaned
+
+    except Exception as e:
+        log.error(f"Relation extraction failed: {e}", exc_info=True)
         return []
