@@ -1,0 +1,144 @@
+=== PROCESSING MODE ===
+Used Fallback (Full Text): False
+
+=== TARGET TEXT (Used for Graph) ===
+**Arib Ansari** has student ID 202207016.
+**Arib Ansari** can be reached at phone number 9910269509.
+**Arib Ansari** can be reached at email address envelopesheikhu03@gmail.com.
+**Arib Ansari** has a LinkedIn profile at LinkedIn/Arib Ansari.
+**Arib Ansari** has a GitHub profile at github.com/Arperior.
+**Arib Ansari** is a student at Jamia Millia Islamia.
+**Arib Ansari** is expected to graduate in May 2026.
+**Arib Ansari** is pursuing a Bachelor of Technology in Computer Science at Jamia Millia Islamia.
+**Arib Ansari** has a CGPA of 8.85/10.00.
+**Arib Ansari** is located in Delhi.
+**Arib Ansari** completed relevant coursework in Prob & Stats, Machine Learning and Data Science (Python), Cybersecurity, Cloud Computing, and Blockchain Applications.
+**Arib Ansari** attended Delhi Public School Indirapuram from 2008 to 2022.
+**Arib Ansari** studied PCM + CS at Delhi Public School Indirapuram.
+**Arib Ansari** is located in Ghaziabad.
+**Arib Ansari** scored 95% in Class XII.
+**Arib Ansari** scored 94.8% in Class X.
+**Arib Ansari** worked as a Technology Development Program Intern at Optum Global Solutions from June 2025 to August 2025.
+**Arib Ansari** worked in Hyderabad.
+**Arib Ansari** migrated config management from AWS CodeCommit to EFS-backed PVCs on AWS EKS.
+**Arib Ansari's** migration enabled Gitless, volume-based config injection across dev & stage environments.
+**Arib Ansari** re-architected Spring Cloud Config Server with native mode, service-specific label control, and profile layering.
+**Arib Ansari's** re-architecture improved boot speed (↓27s→4s) and increased developer autonomy.
+**Arib Ansari** integrated EFS workflows into Jenkins CI/CD with automated sync, version tagging, and config change detection.
+**Arib Ansari's** integration eliminated manual steps and improved overall service boot performance by 5%.
+**Arib Ansari** designed HybridTongue : Code-Mixed Sentiment Analysis.
+**Arib Ansari** utilized Scikit-Learn, Gensim, Pytorch, Transformers, and Regex in HybridTongue.
+**Arib Ansari** designed a preprocessing pipeline to clean and normalize mixed-language text.
+**Arib Ansari's** design resulted in a near unanimous 10% increase in accuracy.
+**Arib Ansari's** increase improved the quality of Word2Vec-based feature embeddings.
+**Arib Ansari's** increase enabled superior intermediate representation of the data.
+**Arib Ansari** leveraged MuRIL (Multilingual Representations for Indian Languages).
+**Arib Ansari** fine-tuned MuRIL for sentiment classification.
+**Arib Ansari's** fine-tuning yielded a 5% accuracy improvement over traditional approaches.
+**Arib Ansari's** fine-tuning resulted in a final F1 score of 0.76.
+**Arib Ansari** designed Falkon : Few-Shot Language Agnostic Keyword Spotting System.
+**Arib Ansari** utilized TorchAudio, Pytorch, Transformers, and Librosa in Falkon.
+**Arib Ansari** resampled audio data and extracted MFCC (Mel-Frequency Cepstral Coefficients) features for each class.
+**Arib Ansari's** resampling established consistent input representations for model training.
+**Arib Ansari** trained a Transformer-based encoder-only architecture to classify MFCCs.
+**Arib Ansari's** training achieved a base class accuracy of 84% with 10 languages and 100 samples per class.
+**Arib Ansari** used few-shot learning mechanisms to extend the model’s capabilities to low-resource classes.
+**Arib Ansari** applied data augmentation, freezing layers, and fine-tuning the model.
+**Arib Ansari's** application successfully integrated 440 novel classes with only a 10% drop in performance.
+**Arib Ansari** is proficient in C, C++, Python, and SQL.
+**Arib Ansari** has basic ability with Assembly, BASH, HTML, Java, and LaTex.
+**Arib Ansari** uses TensorFlow, PyTorch, Scikit-learn, Keras, OpenCV, Git, SQL, SpringBoot, NLTK, spaCy, and Hugging Face Transformers.
+**Arib Ansari** uses AWS and Azure.
+**Arib Ansari** uses Jenkins, Harness, Kubernetes, Freelens, and Docker.
+**Arib Ansari** qualified GATE 2025 with AIR 7713.
+**Arib Ansari** achieved a Top 100 Ranking in the Amazon ML Challenge 2024.
+**Arib Ansari** was the SIH 2024 Grand Finals Winner with PS:1680.
+**Arib Ansari** was the Winner of the Paradox ML Challenge at Google Developer’s Group.
+**Arib Ansari** is a Central Merit Scholarship Awardee for 2025.
+**Arib Ansari** is the Student Placement Coordinator at the Faculty of Engineering and Technology, JMI.
+**Arib Ansari** facilitated placement talks, internship tests, and interview processes.
+**Arib Ansari** contacted HR representatives of various companies.
+**Arib Ansari** established strong professional connections.
+**Arib Ansari** coordinated with recruiters and students.
+**Arib Ansari** ensured smooth execution of placement activities.
+**Arib Ansari** is the Head of Research and Development at UAV JMI.
+**Arib Ansari** researched and developed strategies for autonomous flight and drone path planning.
+**Arib Ansari** optimized performance for the SAE Aero Design Challenge (ADDC).
+**Arib Ansari** analyzed the feasibility of hardware implementation.
+**Arib Ansari** ensured compatibility and efficiency for UAV systems.
+**Arib Ansari** led the R&D team.
+**Arib Ansari** coordinated tasks to deliver innovative solutions.
+**Arib Ansari** met competition requirements.
+**Arib Ansari** is part of the Cloud Team at Google Developer’s Group, JMI.
+**Arib Ansari** organized and actively participated in the Cloud GenAI Campaign.
+**Arib Ansari** promoted awareness and practical applications of Generative AI.
+**Arib Ansari** conducted workshops on React and GitHub.
+**Arib Ansari** enabled peers to gain hands-on experience.
+**Arib Ansari** improved peer's development skills.
+
+=== ORIGINAL FULL TEXT ===
+Arib Ansari
+Student ID: 202207016 ♂phone9910269509
+/envel⌢pesheikhu03@gmail.com /linkedinLinkedIn/Arib Ansari /githubgithub.com/Arperior
+Education
+Jamia Millia Islamia Expected May 2026
+Bachelor of Technology in Computer Science (CGPA: 8.85 / 10.00) Delhi
+•Relevant Coursework: Prob & Stats,Machine Learning and Data Science(Python),Cybersecurity,Cloud
+Computing,Blockchain Applications
+Delhi Public School Indirapuram 2008-2022
+PCM + CS Ghaziabad
+•Class XII- 95%
+•Class X - 94.8%
+Experience
+Optum Global Solutions June 2025 - August 2025
+Technology Development Program Intern Hyderabad
+•Migrated conﬁg management from AWS CodeCommit to EFS-backed PVCs on AWS EKS, enabling Gitless,
+volume-based conﬁg injection across dev & stage environments.
+•Re-architected Spring Cloud Conﬁg Server with native mode, service-speciﬁc label control, and proﬁle layering,
+improving boot speed ( ↓27s→4s) and increasing developer autonomy.
+•Integrated EFS workﬂows into Jenkins CI/CD with automated sync, version tagging, and conﬁg change detection —
+eliminating manual steps and improving overall service boot performance by 5%.
+Projects
+HybridTongue : Code-Mixed Sentiment Analysis |Scikit-Learn,Gensim,Pytorch,Transformers,Regex
+*Designed a comprehensive preprocessing pipeline to clean and normalize mixed-language text having a near
+unanimous 10% increase in accuracy, improving the quality of Word2Vec-based feature embeddings and enabling
+superior intermediate representation of the data.
+*Leveraged MuRIL (Multilingual Representations for Indian Languages), a transformer-based language model
+tailored for Indian languages. Fine-tuning MuRIL for sentiment classiﬁcation yielded a 5% accuracy improvement
+over traditional approaches resulting in ﬁnal F1 score of 0.76
+Falkon : Few-Shot Language Agnostic Keyword Spotting System |TorchAudio,Pytorch,Transformers,Librosa
+*Resampled audio data and extracted MFCC (Mel-Frequency Cepstral Coeﬃcients) features for each class, establish
+consistent input representations for model training.
+*Trained a Transformer-based encoder-only architecture to classify MFCCs, achieving a base class,i.e 10 languages
+with 100 samples per class, accuracy of 84%.
+*Used few-shot learning mechanism to extend the model’s capabilities to low-resource classes. By applying data
+augmentation, freezing layers, and ﬁne-tuning the model, successfully integrated 440 novel classes with only a
+10% drop in performance.
+Skills Summary
+•Programming Languages: Proﬁcient in: C, C++, Python, SQL
+Also basic ability with: Assembly, BASH, HTML , Java , LaTex
+•Frameworks and Libraries: TensorFlow , PyTorch, Scikit-learn , Keras , OpenCV , Git , SQL ,SpringBoot,
+NLTK , spaCy , Hugging Face Transformers.
+•Cloud Platforms: AWS, Azure
+•DevOps Tools: Jenkins , Harness , Kubernetes , Freelens , Docker
+Achievements
+•GATE 2025 Qualiﬁed - AIR 7713
+•Achieved Top 100 Ranking - Amazon ML Challenge 2024
+•SIH 2024 Grand Finals Winner - PS:1680
+•Winner Paradox ML Challenge - Google Developer’s Group
+•Central Merit Scholarship Awardee 2025
+Responsibilities
+Student Placement Coordinator : Faculty of Engineering and Technology, JMI
+*Successfully facilitated placement talks, internship tests, and interview processes.
+*Contacted HR representatives of various companies and established strong professional connections.
+*Coordinated with recruiters and students to ensure smooth execution of placement activities.
+Head of Research and Development : UAV JMI
+*Researched and developed strategies for autonomous ﬂight and drone path planning to optimize performance for
+the SAE Aero Design Challenge (ADDC).
+*Analyzed the feasibility of hardware implementation, ensuring compatibility and eﬃciency for UAV systems.
+*Led the R&D team, coordinating tasks to deliver innovative solutions and meet competition requirements.
+Cloud Team : Google Developer’s Group, JMI
+*Organized and actively participated in the Cloud GenAI Campaign, promoting awareness and practical applications
+of Generative AI.
+*Conducted workshops on React and GitHub, enabling peers to gain hands-on experience and improve their
+development skills.

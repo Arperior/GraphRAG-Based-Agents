@@ -1,0 +1,89 @@
+=== SUMMARY (used for KG) ===
+**HARSHIT KUMAR GUPTA:** Contacted via Phone: 91 9149980425.
+**HARSHIT KUMAR GUPTA:** Contacted via Email: harshitmahajan5520@gmail.com.
+**HARSHIT KUMAR GUPTA:** Profiled on LinkedIn: linkedin.com/in/harshitkumar-gupta-a9ab29255.
+**HARSHIT KUMAR GUPTA:** Profiled on GitHub: github.com/Harshitmahajan5520.
+**HARSHIT KUMAR GUPTA:** Earned Bachelor of Technology in Computer Science.
+**HARSHIT KUMAR GUPTA:** Studied at Jamia Milia Islamia, New Delhi from November 2022 to July 2026.
+**HARSHIT KUMAR GUPTA:** Achieved CGPA 8.27/10.0 at Jamia Milia Islamia.
+**HARSHIT KUMAR GUPTA:** Completed Higher Secondary (12th Grade) at Government High Secondary School in 2022.
+**HARSHIT KUMAR GUPTA:** Achieved a percentage of 99% in 12th Grade.
+**HARSHIT KUMAR GUPTA:** Completed Secondary (10th Grade) at Rabindernath Tagore Public High School in 2020.
+**HARSHIT KUMAR GUPTA:** Achieved a percentage of 89.9% in 10th Grade.
+**HARSHIT KUMAR GUPTA:** Worked as Machine Learning Research Intern at IIIT Guwahati.
+**HARSHIT KUMAR GUPTA:** Investigated the application of machine learning models to predict diabetes.
+**HARSHIT KUMAR GUPTA:** Used economic and socioeconomic data for diabetes prediction.
+**HARSHIT KUMAR GUPTA:** Engineered features and preprocessed complex datasets.
+**HARSHIT KUMAR GUPTA:** Handled class imbalance in datasets.
+**HARSHIT KUMAR GUPTA:** Performed outlier removal using the IQR method.
+**HARSHIT KUMAR GUPTA:** Trained multiple classifiers, including Random Forest, XGBoost, and Logistic Regression.
+**HARSHIT KUMAR GUPTA:** Compared multiple classifiers.
+**HARSHIT KUMAR GUPTA:** Evaluated multiple classifiers.
+**HARSHIT KUMAR GUPTA:** Developed various ensemble models.
+**HARSHIT KUMAR GUPTA:** Fine-tuned various ensemble models.
+**HARSHIT KUMAR GUPTA:** Achieved a final prediction accuracy of 75.3% on test data.
+**HARSHIT KUMAR GUPTA:** Collaborated with research team to advance predictive healthcare analytics.
+**HARSHIT KUMAR GUPTA:** Built GraphRAG for LLM Context.
+**GraphRAG for LLM Context:** Uses Python, Neo4j, FastAPI, WhisperX, and CLIP.
+**HARSHIT KUMAR GUPTA:** Built a multimodal retrieval-augmented generation system.
+**The system:** Integrates text, images, and audio into a dynamic knowledge graph for LLM context.
+**HARSHIT KUMAR GUPTA:** Automated entity and relationship extraction.
+**HARSHIT KUMAR GUPTA:** Automated hierarchical clustering.
+**HARSHIT KUMAR GUPTA:** Automated community summarization.
+**HARSHIT KUMAR GUPTA:** Developed hybrid retrieval combining map-reduce summaries.
+**HARSHIT KUMAR GUPTA:** Implemented advanced AI techniques for multimodal data processing.
+**HARSHIT KUMAR GUPTA:** Implemented advanced AI techniques for knowledge graph construction.
+**HARSHIT KUMAR GUPTA:** Built W3B College Society Website.
+**W3B College Society Website:** Uses Node.js, Firebase, Cloudinary, and Express.
+**HARSHIT KUMAR GUPTA:** Integrated Firebase for real-time data storage.
+**HARSHIT KUMAR GUPTA:** Integrated Cloudinary for efficient image management.
+**HARSHIT KUMAR GUPTA:** Built RESTful APIs with Node.js and Express.
+**HARSHIT KUMAR GUPTA:** Enabled features like event management.
+**HARSHIT KUMAR GUPTA:** Enabled content updates with scalable architecture.
+**HARSHIT KUMAR GUPTA:** Proficient in Programming Languages: C, C++, Python.
+**HARSHIT KUMAR GUPTA:** Skilled in Machine Learning: Numpy, Pandas, XGBoost, Matplotlib.
+**HARSHIT KUMAR GUPTA:** Skilled in Web Technologies: Node.js, Express.js, API Design.
+**HARSHIT KUMAR GUPTA:** Skilled in Databases: MongoDB, Firebase, DBMS.
+**HARSHIT KUMAR GUPTA:** Experienced with Tools & Frameworks: Neo4j, WhisperX, CLIP, Cloudinary.
+**HARSHIT KUMAR GUPTA:** Knowledgeable in Technical Concepts: Operating Systems, Computer Networks, Virtual Memory, Networking, OOPS.
+
+=== FULL TEXT (for reference) ===
+HARSHIT KUMAR GUPTA   
+Phone:  91 9149980425 | Email: harshitmaha jan5520 @gmail.com  | LinkedIn : linkedi n.com/in/harshi tkuma r-gupta-
+a9ab2925 5  | GitHub: github.com/Harshitmah ajan5520   
+EDUCATION   
+• Bachelor of Technology in Computer Science   
+• Jamia Milia Islamia, New Delhi | November 2022  July 2026 | CGPA 8.27/10.0  
+• Higher Secondary (12th Grade)  
+Government High Secondary  School  | 2022  | Percentage : 99% 
+• Secondary (10th Grade)  
+Rabindernath Tagore Public High School  | 2020  | Percentage : 89.9 % 
+EXPERIENCE   
+Machine Learning Research Intern | IIIT Guwahati   
+• Investigated the application of machine learning models to predict diabetes using economic and socioeconomic data  
+• Engineered features and preprocessed complex datasets, including handling class imbalance and performing outlier removal 
+using the IQR method  
+• Trained, compared, and evaluated multiple classifiers, including Random Forest, XGBoost, and Logistic Regression  
+• Developed and fine -tuned various ensemble models, achieving a final prediction accuracy of 75.3% on test data  
+• Collaborated with research team to advance predictive healthcare analytics  
+  
+PROJECTS   
+GraphRAG for LLM Context  | Python, Neo4j, FastAPI, WhisperX, CLIP   
+• Built a multimodal retrieval -augmented generation system that integrates text, images, and audio into a dynamic knowledge 
+graph for LLM context  
+• Automated entity and relationship extraction, hierarchical clustering, and community summarization to enable scalable, 
+context -rich responses  
+• Developed hybrid retrieval combining map -reduce summaries and supporting precise, provenance -backed answers across 
+domains , Implemented advanced AI techniques for multimodal data processing and knowledge graph construction  
+ 
+W3B College Society Website | Node.js, Firebase, Cloudinary, Express   
+• Integrated Firebase for real -time data storage and Cloudinary for efficient image management   
+• Built RESTful APIs with Node.js and Express to facilitate smooth communication between frontend and backend  
+• Enabled features like event management and content updates with scalable architecture  
+TECHNICAL SKILLS   
+Programming Languages:  C, C++, Python  
+Machine Learning:  Numpy, Pandas, XGBoost ,Matplotlib  
+Web Technologies:  Node.js, Express.js, API Design  
+Databases:  MongoDB, Firebase, DBMS  
+Tools & Frameworks:  Neo4j, , WhisperX, CLIP , Cloudinary  
+Technical Concepts:  Operating Systems, Computer Networks, Virtual Memory, Networking, OOPS
