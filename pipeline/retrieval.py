@@ -6,7 +6,7 @@ Retrieval module: broad search → re-ranking → k-hop evidence → synthesis
 from __future__ import annotations
 from typing import List, Tuple, Dict
 import logging
-import Levenshtein
+import Levenshtein # type: ignore
 import re
 
 from config.config import load_config

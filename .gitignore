@@ -49,3 +49,4 @@ dist/
 local_settings.py
 # For Django projects, you might also ignore:
 # settings_local.py
+.env
