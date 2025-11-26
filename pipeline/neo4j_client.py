@@ -26,11 +26,14 @@ class Chunk:
 
 def init_indexes():
     """
-    Ensure core indexes and constraints exist for performance and data integrity.
+    Ensure core indexes and constraints exist.
+    UPDATED: Added index for :Image nodes.
     """
     cyphers = [
         "CREATE CONSTRAINT entity_name_unique IF NOT EXISTS FOR (e:Entity) REQUIRE e.name IS UNIQUE",
         "CREATE INDEX chunk_id_idx IF NOT EXISTS FOR (c:Chunk) ON (c.id)",
+        # NEW: Index for Image lookup
+        "CREATE INDEX image_id_idx IF NOT EXISTS FOR (i:Image) ON (i.id)",
         "CREATE INDEX community_idx IF NOT EXISTS FOR (c:Community) ON (c.id)",
         "CREATE INDEX user_id_idx IF NOT EXISTS FOR (u:User) ON (u.id)"
     ]
@@ -44,10 +47,7 @@ def init_indexes():
 
 
 def check_apoc() -> bool:
-    """
-    Checks if APOC plugin is installed and callable in Neo4j.
-    Returns True if available, False otherwise.
-    """
+    """Checks if APOC plugin is installed."""
     try:
         with _driver.session() as s:
             result = s.run("RETURN apoc.version() AS version").single()
@@ -62,6 +62,9 @@ def check_apoc() -> bool:
         return False
 
 
+# =========================================================
+# 1. TEXT STORAGE (Standard GraphRAG)
+# =========================================================
 def store_chunk_with_graph(
     chunk: Chunk | dict,
     user_id: str | None,
@@ -70,12 +73,6 @@ def store_chunk_with_graph(
 ):
     """
     Insert one Chunk + Entities + Relations into Neo4j.
-    Optionally attach (User)-[:INTERESTED_IN]->(Chunk) when user_id provided.
-
-    Notes:
-      - relations: list of dicts with keys: src, tgt, relation, evidence, confidence
-      - we MERGE relation edges on the relation property too so distinct relation types
-        between the same two entities become separate edges.
     """
     if isinstance(chunk, dict):
         chunk = Chunk(**chunk)
@@ -83,12 +80,10 @@ def store_chunk_with_graph(
     # normalize entities
     ent_dicts = []
     for e in entities or []:
-        if not e:
-            continue
+        if not e: continue
         if isinstance(e, dict):
             name = e.get("name", "").strip()
-            if not name:
-                continue
+            if not name: continue
             ent_dicts.append({
                 "name": name,
                 "type": e.get("type", "unknown"),
@@ -106,8 +101,7 @@ def store_chunk_with_graph(
     for r in relations or []:
         src = str(r.get("src") or r.get("source") or "").strip()
         tgt = str(r.get("tgt") or r.get("target") or "").strip()
-        if not src or not tgt:
-            continue
+        if not src or not tgt: continue
 
         rel_dicts.append({
             "src": src,
@@ -119,9 +113,6 @@ def store_chunk_with_graph(
 
     log.info(f"Storing chunk {chunk.id}: {len(ent_dicts)} entities, {len(rel_dicts)} relations")
 
-    ###########################################################################
-    # CYPHER: create chunk, entities, provenance (MENTIONED_IN) and RELATION edges
-    ###########################################################################
     q_main = """
     MERGE (c:Chunk {id:$cid})
       SET c.text=$text,
@@ -155,28 +146,162 @@ def store_chunk_with_graph(
 
     try:
         with _driver.session() as s:
-            s.run(
-                q_main,
-                cid=chunk.id,
-                text=chunk.text,
-                source=chunk.source,
-                entities=ent_dicts,
-                relations=rel_dicts
-            )
-
+            s.run(q_main, cid=chunk.id, text=chunk.text, source=chunk.source, entities=ent_dicts, relations=rel_dicts)
             if user_id:
                 s.run(q_interest, uid=str(user_id).strip(), cid=chunk.id)
-
-        log.info(f"Chunk {chunk.id} stored successfully in Neo4j.")
+        log.info(f"Chunk {chunk.id} stored successfully.")
     except Exception as e:
         log.error(f"Failed to store chunk {chunk.id}: {e}", exc_info=True)
         raise
 
 
+# =========================================================
+# 2. IMAGE STORAGE (N-MMKG Implementation)
+# =========================================================
+def store_image_scene_graph(
+    image_id: str,
+    image_path: str,
+    summary: str,
+    entities: List[Dict],
+    relations: List[Dict],
+    user_id: str | None,
+    user_context: str | None = None  # <--- NEW: Accept user context
+):
+    """
+    Stores Image -> VisualEntities with optional User Context.
+    Structure: (User)-[:INTERESTED_IN]->(Image {user_context:...})-[:DEPICTS]->(Entity)
+    """
+    log.info(f"Storing Scene Graph for Image {image_id} ({len(entities)} ents). Context len: {len(user_context or '')}")
+
+    # Prepare entity data
+    ent_dicts = []
+    for e in entities:
+        name = e.get("name", "").strip()
+        if name:
+            ent_dicts.append({
+                "name": name,
+                "type": e.get("type", "VISUAL"),
+                "description": e.get("description", "Visual object")
+            })
+
+    # Prepare relation data
+    rel_dicts = []
+    for r in relations:
+        src = r.get("source", "").strip()
+        tgt = r.get("target", "").strip()
+        if src and tgt:
+            rel_dicts.append({
+                "src": src,
+                "tgt": tgt,
+                "relation": r.get("relation", "RELATED_TO").upper().replace(" ", "_")
+            })
+
+    # Query: Create Image Node (with Summary & User Context) & Link to Entities
+    q_image = """
+    MERGE (i:Image {id:$iid})
+    SET i.path = $path, 
+        i.summary = $summary,
+        i.user_context = $context,  // <--- Store User Context here
+        i.created_at = timestamp()
+    
+    WITH i
+    UNWIND $entities AS e
+      MERGE (n:Entity {name:e.name})
+      ON CREATE SET n.type = e.type, 
+                    n.description = e.description,
+                    n.modality = 'visual',  // Mark as visual origin
+                    n.first_seen = timestamp()
+      ON MATCH SET n.modality = coalesce(n.modality, 'visual')
+      
+      // The Paper's N-MMKG link: Image DEPICTS Entity
+      MERGE (i)-[:DEPICTS]->(n)
+
+    WITH i
+    UNWIND $relations AS r
+      MERGE (a:Entity {name:r.src})
+      MERGE (b:Entity {name:r.tgt})
+      MERGE (a)-[rel:RELATION {relation:r.relation}]->(b)
+      ON CREATE SET rel.type = 'visual'
+    """
+
+    # Link User to Image
+    q_user_image = """
+    MERGE (u:User {id:$uid})
+    MERGE (i:Image {id:$iid})
+    MERGE (u)-[:INTERESTED_IN]->(i)
+    """
+
+    try:
+        with _driver.session() as s:
+            # Pass 'context' parameter to the query
+            s.run(q_image, 
+                  iid=image_id, 
+                  path=image_path, 
+                  summary=summary, 
+                  context=user_context or "",  # Handle None safely
+                  entities=ent_dicts, 
+                  relations=rel_dicts)
+            
+            if user_id:
+                s.run(q_user_image, uid=str(user_id).strip(), iid=image_id)
+        
+        log.info(f"Image {image_id} stored successfully.")
+    except Exception as e:
+        log.error(f"Failed to store image graph: {e}", exc_info=True)
+
+# =========================================================
+# 3. SEARCH & FUSION HELPERS
+# =========================================================
+def search_potential_matches(entity_name: str) -> List[str]:
+    """Find existing entities with similar names (Case-insensitive substring)."""
+    q = """
+    MATCH (e:Entity)
+    WHERE toLower(e.name) CONTAINS toLower($name) 
+       OR toLower($name) CONTAINS toLower(e.name)
+    RETURN DISTINCT e.name AS name
+    LIMIT 5
+    """
+    try:
+        with _driver.session() as s:
+            rows = s.run(q, name=entity_name).data()
+            return [r["name"] for r in rows if r["name"] != entity_name]
+    except Exception as e:
+        log.warning(f"Search match failed: {e}")
+        return []
+
+
+def merge_entities(target_name: str, visual_name: str):
+    """
+    Merges the new 'visual_name' node INTO the existing 'target_name' node.
+    Requires APOC.
+    """
+    q = """
+    MATCH (target:Entity {name:$t_name})
+    MATCH (visual:Entity {name:$v_name})
+    WHERE id(target) <> id(visual)
+    CALL apoc.refactor.mergeNodes([target, visual], {
+        properties: {
+            description:'combine', 
+            modality:'combine'
+        },
+        mergeRels: true
+    })
+    YIELD node
+    RETURN count(*)
+    """
+    try:
+        with _driver.session() as s:
+            s.run(q, t_name=target_name, v_name=visual_name)
+        log.info(f"Cross-Modal Fusion: Merged '{visual_name}' -> '{target_name}'")
+    except Exception as e:
+        log.error(f"Merge failed for '{visual_name}' -> '{target_name}': {e}")
+
+
+# =========================================================
+# 4. RETRIEVAL
+# =========================================================
 def search_entities_contains(q: str, limit: int | None = None) -> List[Dict]:
     limit = limit or _cfg.retrieval_search_limit
-    log.info(f"Searching entities containing '{q}' (limit={limit})")
-
     try:
         with _driver.session() as s:
             res = s.run(
@@ -186,55 +311,42 @@ def search_entities_contains(q: str, limit: int | None = None) -> List[Dict]:
                 "LIMIT $limit",
                 q=q, limit=limit
             )
-            data = res.data()
-            return data
+            return res.data()
     except Exception as e:
-        log.error(f"Entity search failed for query '{q}': {e}")
+        log.error(f"Entity search failed: {e}")
         return []
 
 
 def k_hop_chunks(entity_name: str, k: int = 1, limit: int | None = None) -> List[Dict]:
     """
-    Returns chunk evidence k hops away from an entity.
-    Tries APOC path expansion, but falls back to a pure-Cypher variable-length traversal
-    if APOC is not available.
-    Case-insensitive entity match (toLower compare).
+    Returns evidence (Text Chunks OR Images) k hops away from an entity.
     """
     limit = limit or _cfg.neo4j_query_limit
-    log.info(f"Fetching {k}-hop neighborhood for '{entity_name}' (limit={limit})")
-
-    q_apoc = """
+    
+    # Updated to fetch BOTH Chunks and Images linked to the entity
+    q = """
     MATCH (e:Entity)
     WHERE toLower(e.name) = toLower($name)
-    CALL apoc.path.subgraphNodes(e, {relationshipFilter:'RELATION>', maxLevel:$k})
+    CALL apoc.path.subgraphNodes(e, {relationshipFilter:'RELATION>|DEPICTS|MENTIONED_IN', maxLevel:$k})
     YIELD node
-    WITH DISTINCT node WHERE node:Chunk
-    RETURN node.id as cid, node.text as text
+    WITH DISTINCT node
+    WHERE node:Chunk OR node:Image
+    RETURN labels(node)[0] as type, node.id as cid, node.text as text, node.summary as summary, node.path as path
     LIMIT $limit
     """
-
-    q_fallback = """
-    MATCH (e:Entity)
-    WHERE toLower(e.name) = toLower($name)
-    MATCH (e)-[:RELATION*1..$k]->(x:Entity)
-    MATCH (x)-[:MENTIONED_IN]->(c:Chunk)
-    RETURN DISTINCT c.id as cid, c.text as text
-    LIMIT $limit
-    """
-
     try:
         with _driver.session() as s:
-            try:
-                res = s.run(q_apoc, name=entity_name, k=k, limit=limit)
-                data = res.data()
-                log.info(f"APOC: Retrieved {len(data)} chunks for '{entity_name}' (k={k})")
-                return data
-            except Exception as inner:
-                log.warning(f"APOC query failed, falling back to pure-cypher: {inner}")
-                res = s.run(q_fallback, name=entity_name, k=k, limit=limit)
-                data = res.data()
-                log.info(f"Fallback: Retrieved {len(data)} chunks for '{entity_name}' (k={k})")
-                return data
+            res = s.run(q, name=entity_name, k=k, limit=limit)
+            data = res.data()
+            # Normalize output so retrieval.py can use it
+            results = []
+            for r in data:
+                if r["type"] == "Image":
+                    # Treat image summary as text for retrieval context
+                    results.append({"cid": r["cid"], "text": f"[IMAGE SUMMARY] {r.get('summary','')} (File: {r.get('path','')})"})
+                else:
+                    results.append({"cid": r["cid"], "text": r.get("text","")})
+            return results
     except Exception as e:
-        log.error(f"Failed k-hop retrieval for '{entity_name}': {e}", exc_info=True)
+        log.error(f"k-hop retrieval failed: {e}")
         return []

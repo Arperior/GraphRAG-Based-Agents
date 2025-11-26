@@ -24,7 +24,6 @@ class Neo4jConfig:
 @dataclass(frozen=True)
 class GeminiConfig:
     api_key: str
-    # Free-tier safe 
     model: str = "gemini-2.0-flash"   
     max_output_tokens: int = 512
     temperature: float = 0.2
@@ -32,12 +31,28 @@ class GeminiConfig:
 
 @dataclass(frozen=True)
 class LocalLLMConfig:
-    # GGUF dir + filename (your setup: models\...\mistral-7b-instruct-v0.1.Q4_K_M.gguf)
+    # Text-only model (Mistral) for Graph Extraction
     model_dir: Path
     model_file: str
     n_ctx: int = 8192
     n_gpu_layers: int = 40  
     verbose: bool = True
+
+@dataclass(frozen=True)
+class LlavaConfig:
+    # Vision model (LLaVA + Clip)
+    model_path: str
+    clip_path: str # Added to handle mmproj-model-f16.gguf
+    n_ctx: int = 4096
+    n_gpu_layers: int = 100
+    verbose: bool = False
+
+@dataclass(frozen=True)
+class YoloConfig:
+    # Vision segmentation model (YOLOv8)
+    model_file: str
+    confidence: float = 0.25
+    verbose: bool = False
 
 @dataclass(frozen=True)
 class AppConfig:
@@ -50,6 +65,8 @@ class AppConfig:
     neo4j: Neo4jConfig
     gemini: GeminiConfig
     local_llm: LocalLLMConfig
+    llava: LlavaConfig 
+    yolo: YoloConfig # Added for segmentation
     leiden_resolution: float = float(os.getenv("LEIDEN_RESOLUTION", "1.0"))
     retrieval_search_limit: int = int(os.getenv("RETRIEVAL_SEARCH_LIMIT", "10"))
     neo4j_query_limit: int = int(os.getenv("NEO4J_QUERY_LIMIT", "100"))
@@ -62,17 +79,22 @@ def load_config() -> AppConfig:
         password=_req("NEO4J_PASSWORD"),
     )
 
-    # Gemini can be optional during local-only testing; raise only if you use it.
     gem_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not gem_key:
-        # still build, you just won't be able to call Gemini
         gem_key = "MISSING"
 
+    # 1. Text Model Config (Mistral)
     local_model_dir = Path(os.getenv("LOCAL_LLM_MODEL", "") or ".")
     local_model_file = os.getenv("LOCAL_LLM_FILE", "") or ""
-    if not local_model_dir.exists():
-        # Don't fail here; you might set later. Client will validate on first use.
-        pass
+
+    # 2. Vision Model Config (LLaVA)
+    llava_path = os.getenv("LOCAL_LLAVA_MODEL", "")
+    llava_clip = os.getenv("LOCAL_LLAVA_CLIP", "")
+
+    # 3. Vision Segmentation Config (YOLO)
+    # Default to medium model if not specified
+    yolo_file = os.getenv("YOLO_MODEL_FILE", "yolov8m-seg.pt")
+    yolo_conf = float(os.getenv("YOLO_CONFIDENCE", "0.25"))
 
     app = AppConfig(
         root=ROOT,
@@ -86,13 +108,24 @@ def load_config() -> AppConfig:
         local_llm=LocalLLMConfig(
             model_dir=local_model_dir,
             model_file=local_model_file,
-            n_ctx=int(os.getenv("LOCAL_N_CTX", "2048")),
-            n_gpu_layers=int(os.getenv("LOCAL_N_GPU_LAYERS", "32")),
+            n_ctx=int(os.getenv("LOCAL_N_CTX", "8192")), 
+            n_gpu_layers=int(os.getenv("LOCAL_N_GPU_LAYERS", "40")),
             verbose=os.getenv("LOCAL_VERBOSE", "0") == "1"
         ),
+        llava=LlavaConfig(
+            model_path=llava_path,
+            clip_path=llava_clip,
+            n_ctx=int(os.getenv("LOCAL_LLAVA_CTX", "4096")),
+            n_gpu_layers=int(os.getenv("LOCAL_LLAVA_GPU_LAYERS", "100")),
+            verbose=os.getenv("LOCAL_VERBOSE", "0") == "1"
+        ),
+        yolo=YoloConfig(
+            model_file=yolo_file,
+            confidence=yolo_conf,
+            verbose=os.getenv("YOLO_VERBOSE", "0") == "1"
+        )
     )
 
-    # ensure dirs
     for d in [app.data_dir, app.uploads_dir, app.cache_dir, app.logs_dir]:
         d.mkdir(parents=True, exist_ok=True)
 

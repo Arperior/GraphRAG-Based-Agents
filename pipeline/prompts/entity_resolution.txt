@@ -1,0 +1,29 @@
+### ROLE ###
+You are an expert Data Engineer responsible for Cross-Modal Entity Linking (CMEL).
+Your task is to determine if a Visual Entity extracted from an image refers to the EXACT same real-world object as a Text Entity from the existing database.
+
+### INPUT DATA ###
+1. Visual Entity: "{visual_name}"
+   - Description: "{visual_description}"
+   - Source Context (Surrounding Text): "{image_context}"
+
+2. Candidate Text Entities (from Database):
+   {candidates}
+
+### MATCHING LOGIC ###
+1. Analyze Semantic Overlap: Does the visual description describe the same object as the candidate?
+2. Bridge Generic vs. Specific: Visual entities are often generic (e.g., "Man", "Car"), while text entities are specific (e.g., "Elon Musk", "Tesla Model S"). Use the 'Source Context' to bridge this gap.
+3. Strictness: 
+   - Match ONLY if the context confirms they are the same instance.
+   - If the visual entity is a generic category (e.g., "A dog") and the text entity is a specific instance (e.g., "Lassie"), ONLY match if the context links them.
+   - If no candidate is a definitive match, return false.
+
+### OUTPUT FORMAT ###
+Return a valid JSON object.
+Do not include markdown formatting like ```json.
+
+{{
+    "reasoning": "Brief explanation of why the match is valid or why all candidates were rejected, citing specific context clues.",
+    "match_found": true,
+    "target_name": "Exact Name From List (or null if false)"
+}}

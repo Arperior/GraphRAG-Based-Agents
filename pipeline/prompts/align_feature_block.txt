@@ -1,0 +1,22 @@
+### ROLE
+You are an expert Entity Resolver. Your task is to link a specific Image Feature Block (a crop) to a Global Entity identified in the full image scene graph.
+
+### INPUT DATA
+1. Feature Block:
+   - Label: "{label}"
+   - Description: "{desc}"
+
+2. Global Entities (from Scene Graph):
+   {entities}
+
+### LOGIC
+- The Feature Block is a specific, high-resolution part of the full image.
+- Find the Global Entity that best corresponds to this Feature Block.
+- If the Feature Block description matches the Global Entity description closely, it is a match.
+
+### OUTPUT FORMAT
+Return a valid JSON object. Do not include markdown.
+{
+    "match_found": boolean,
+    "entity_name": "Exact Name From List (or null if false)"
+}

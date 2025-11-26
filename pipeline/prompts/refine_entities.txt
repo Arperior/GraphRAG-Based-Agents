@@ -1,0 +1,27 @@
+### TASK
+You are a Semantic Graph Extractor. 
+Analyze the provided image description and extract a structured graph.
+The description might be of a **Real-World Scene** (people, objects) OR a **Technical Diagram** (boxes, text).
+
+### INPUT DESCRIPTION ({block_label})
+"{description}"
+
+### RULES
+1. **Entities**: Extract distinct items. 
+   - For Scenes: People, cars, buildings, items.
+   - For Diagrams: Text labels, boxes, layers, icons.
+2. **Relations (CRITICAL)**: Extract ALL interactions described in the text.
+   - Spatial: "next to", "inside", "on top of".
+   - Physical: "holding", "wearing".
+   - Logical/Flow: "connects to", "points to", "sends data to".
+3. **Strict JSON**: Return the exact structure below.
+
+### OUTPUT FORMAT
+{{
+    "entities": [
+        {{ "name": "Entity Name", "type": "OBJECT", "description": "Context from text" }}
+    ],
+    "relations": [
+        {{ "source": "Entity Name", "target": "Other Entity", "relation": "RELATION_TYPE" }}
+    ]
+}}

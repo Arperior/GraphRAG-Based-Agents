@@ -5,14 +5,21 @@ GraphRAG — Ingest + Chat + Memory + Communities
 from __future__ import annotations
 import uuid
 import logging
+import logging.handlers
 import os
 import streamlit as st
+from pathlib import Path
+
+# Config import for safe paths
+from config.config import load_config
 
 # Pipeline imports
 from pipeline.preprocessing import chunk_tokens
 from pipeline.entity_extraction import extract_graph
 from pipeline.relation_extractor import extract_relations_from_text
-from pipeline.graph_builder import build_and_store_graph
+
+# Graph Builder Imports
+from pipeline.graph_builder import build_and_store_graph, build_and_store_image
 
 from pipeline.neo4j_client import init_indexes, check_apoc
 from pipeline.retrieval import gather_evidence_for_query, synthesize_answer
@@ -28,23 +35,66 @@ from pipeline.memory import (
 
 from pipeline.clustering import run_leiden, summarize_communities
 from pipeline.llm_client_gemini import gemini_complete
-
-# NEW: PDF Processing Import
 from pipeline.pdf_utils import process_pdf_upload
 
+from pipeline.enrichment_graph import suggest_and_create_links
+from pipeline.llm_client_vision import process_image_pipeline
+
 
 # ============================================================================
-# STREAMLIT CONFIG
+# CONFIG & LOGGING
 # ============================================================================
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
-)
+def setup_logging(logs_dir: Path):
+    """
+    Configures logging to BOTH console and rotating files.
+    """
+    # Create logs folder if missing
+    logs_dir.mkdir(parents=True, exist_ok=True)
+
+    # Define file path: project/logs/app.log
+    log_file_path = logs_dir / "app.log"
+
+    # Define format: Time | Level | Module Name | Message
+    formatter = logging.Formatter(
+        "%(asctime)s | %(levelname)-8s | %(name)-20s | %(message)s"
+    )
+
+    # Get the Root Logger (The "Parent" of all other loggers)
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    
+    # Clean up existing handlers (prevents duplicate logs on Streamlit reload)
+    if root_logger.hasHandlers():
+        root_logger.handlers.clear()
+
+    # A. File Handler (Saves to app.log)
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_file_path, 
+        maxBytes=5*1024*1024, # 5 MB
+        backupCount=5,        # Keep 5 old files
+        encoding="utf-8"
+    )
+    file_handler.setFormatter(formatter)
+    root_logger.addHandler(file_handler)
+
+    # B. Console Handler (Prints to Terminal)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
+    
+    logging.info(f"Logging initialized. Saving to: {log_file_path}")
+
+# Load config
+_cfg = load_config()
+
+# Run Setup IMMEDIATELY
+setup_logging(_cfg.logs_dir)
+
+# Now create the logger for this specific file
+log = logging.getLogger("app")
 
 st.set_page_config(page_title="GraphRAG Chat", layout="wide")
 st.title("GraphRAG — Contextual Chat")
-
-log = logging.getLogger("app")
 
 
 # ============================================================================
@@ -91,7 +141,7 @@ if not st.session_state["db_ready"]:
 
 
 # ============================================================================
-# CHAT MEMORY (session-only working memory)
+# CHAT MEMORY
 # ============================================================================
 if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
@@ -102,15 +152,11 @@ if "chat_history" not in st.session_state:
 # ============================================================================
 with st.expander("Ingest Data Into Graph", expanded=False):
     
-    # We use tabs to switch between raw text paste and PDF upload
-    tab1, tab2 = st.tabs(["Text Input", "PDF Upload"])
+    tab1, tab2, tab3 = st.tabs(["Text Input", "PDF Upload", "Image Upload"])
 
-    # ------------------------------------------------------------------------
-    # TAB 1: RAW TEXT INPUT
-    # ------------------------------------------------------------------------
+    # --- TAB 1: TEXT ---
     with tab1:
         st.markdown("Paste text → chunk → extract entities & relations → Neo4j")
-
         text_input = st.text_area("Input text", height=200)
         use_rel_text = st.checkbox("Enable relation extraction (Text)", value=True)
 
@@ -119,37 +165,26 @@ with st.expander("Ingest Data Into Graph", expanded=False):
                 st.warning("Please enter text")
             else:
                 chunks = chunk_tokens(text_input)
-                
                 progress_bar = st.progress(0)
                 status_text = st.empty()
-                
-                ent_total = 0
-                rel_total = 0
-                failed_chunks = 0
+                ent_total, rel_total, failed_chunks = 0, 0, 0
 
                 for i, c in enumerate(chunks):
                     status_text.text(f"Processing chunk {i+1}/{len(chunks)}...")
                     chunk_id = f"chunk_{uuid.uuid4().hex[:8]}"
-
                     try:
-                        # 1. Extract Entities
                         data = extract_graph(c)
                         entities = data.get("entities", [])
                         base_rel = data.get("relations", [])
-
-                        # 2. Refine Relations (Protected against crash)
                         refined = []
                         if use_rel_text:
                             try:
                                 refined = extract_relations_from_text(c)
                             except Exception as e:
                                 log.error(f"Relation extraction skipped for {chunk_id}: {e}")
-                        
                         relations = base_rel + refined
-
-                        # 3. Build & Store (Protected against crash)
+                        
                         build_and_store_graph(chunk_id, c, entities, relations, user_id=USER_ID)
-
                         ent_total += len(entities)
                         rel_total += len(relations)
 
@@ -158,55 +193,105 @@ with st.expander("Ingest Data Into Graph", expanded=False):
                         log.error(f"CRITICAL: Failed to ingest chunk {chunk_id}: {e}", exc_info=True)
                         st.error(f"Chunk {i+1} failed: {e}")
                     
-                    # Update progress
                     progress_bar.progress((i + 1) / len(chunks))
 
                 status_text.text("Done!")
-                
                 if failed_chunks > 0:
                     st.warning(f"Ingestion finished with {failed_chunks} failures.")
                 else:
                     st.success("Ingestion complete!")
-                
                 st.write(f"Entities added: {ent_total}")
                 st.write(f"Relations added: {rel_total}")
 
-    # ------------------------------------------------------------------------
-    # TAB 2: PDF UPLOAD
-    # ------------------------------------------------------------------------
+    # --- TAB 2: PDF ---
     with tab2:
-        st.markdown("""
-        **PDF Processing Pipeline:**
-        1. Extract Text
-        2. **Summarize** via Gemini (to reduce noise & cost)
-        3. Extract Graph from Summary
-        """)
-        
+        st.markdown("**PDF Processing:** Extract Text → Summarize (Gemini) → Graph")
         uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
         use_rel_pdf = st.checkbox("Enable relation extraction (PDF)", value=True)
         
         if st.button("Process PDF"):
             if uploaded_file:
-                with st.spinner("Analyzing PDF... this uses Gemini for summarization..."):
+                with st.spinner("Analyzing PDF..."):
                     try:
-                        # process_pdf_upload handles the full cycle: 
-                        # read -> summarize -> chunk -> extract -> store
-                        result = process_pdf_upload(uploaded_file, run_relations=use_rel_pdf,user_id=USER_ID)
-                        
-                        st.success(f"PDF Processed! Saved reference text to: `{result['txt_path']}`")
-                        
+                        result = process_pdf_upload(uploaded_file, run_relations=use_rel_pdf, user_id=USER_ID)
+                        st.success(f"PDF Processed! Saved to: `{result['txt_path']}`")
                         col1, col2 = st.columns(2)
-                        col1.metric("Entities Added", result['total_entities'])
-                        col2.metric("Relations Added", result['total_relations'])
-                        
-                        with st.expander("View Generated Summary (Used for Graph)"):
+                        col1.metric("Entities", result['total_entities'])
+                        col2.metric("Relations", result['total_relations'])
+                        with st.expander("Summary"):
                             st.markdown(result['summary'])
-                            
                     except Exception as e:
-                        st.error(f"PDF Processing failed: {e}")
-                        log.error(f"PDF Processing failed: {e}", exc_info=True)
+                        st.error(f"PDF failed: {e}")
             else:
-                st.warning("Please upload a PDF file first.")
+                st.warning("Upload a PDF first.")
+
+    # --- TAB 3: IMAGE (N-MMKG) ---
+    with tab3:
+        st.markdown("""
+        **Image Pipeline (MMGraphRAG Paper Implementation):**
+        1. **Segmentation (YOLO)** - Splits image into semantic blocks.
+        2. **Description (LLaVA)** - Describes each block in detail.
+        3. **Scene Graph Extraction (LLaVA)** - Extracts global entities.
+        4. **Alignment (Mistral)** - Maps blocks to entities for rich data.
+        5. **Cross-Modal Fusion** - Links visual entities to text graph.
+        """)
+        
+        img_file = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
+        
+        # User Context Input
+        user_context_text = st.text_area(
+            "Add Context (Optional)", 
+            placeholder="e.g., 'This is the architecture diagram for the Q3 project report.'"
+        )
+        
+        if st.button("Analyze & Ingest Image"):
+            if img_file:
+                with st.spinner("Running 5-Step Vision Pipeline (YOLO -> LLaVA -> Mistral)..."):
+                    try:
+                        # 1. Save locally
+                        save_dir = _cfg.uploads_dir
+                        save_dir.mkdir(parents=True, exist_ok=True)
+                        
+                        file_ext = Path(img_file.name).suffix
+                        unique_name = f"img_{uuid.uuid4().hex[:8]}{file_ext}"
+                        temp_path = save_dir / unique_name
+                        
+                        with open(temp_path, "wb") as f:
+                            f.write(img_file.getbuffer())
+                        
+                        # 2. Run Pipeline (Now uses process_image_pipeline)
+                        scene_graph = process_image_pipeline(
+                            str(temp_path), 
+                            user_context=user_context_text
+                        )
+                        
+                        num_ents = len(scene_graph.get('entities', []))
+                        num_rels = len(scene_graph.get('relations', []))
+                        
+                        # Check for failure
+                        if scene_graph.get("summary") == "Processing Failed":
+                            st.error("Vision pipeline failed. Check logs.")
+                        else:
+                            st.success(f"Analysis Complete! Found {num_ents} entities & {num_rels} relations.")
+                            
+                            with st.expander("View Enriched Scene Graph"):
+                                st.json(scene_graph)
+                            
+                            # 3. Store & Fusion
+                            build_and_store_image(
+                                str(temp_path), 
+                                scene_graph, 
+                                user_id=USER_ID, 
+                                user_context=user_context_text
+                            )
+                            
+                            st.success("Ingestion Complete! Image Node created & visual entities fused.")
+                        
+                    except Exception as e:
+                        st.error(f"Image failed: {e}")
+                        log.error(f"Image failed: {e}", exc_info=True)
+            else:
+                st.warning("Upload an image first.")
 
 
 # ============================================================================
@@ -214,7 +299,6 @@ with st.expander("Ingest Data Into Graph", expanded=False):
 # ============================================================================
 st.header("Chat")
 
-# Show history
 for role, msg in st.session_state["chat_history"]:
     st.chat_message(role).write(msg)
 
@@ -222,76 +306,73 @@ prompt = st.chat_input("Ask anything...")
 
 if prompt:
     st.session_state["chat_history"].append(("user", prompt))
-
-    # Retrieve evidence for query automatically
     _, evidence = gather_evidence_for_query(
-        prompt,
-        k_hop=1,
-        per_entity=3,
-        top_entities=4,
-        user_id=USER_ID
+        prompt, k_hop=1, per_entity=3, top_entities=4, user_id=USER_ID
     )
-
-    # Generate final answer
     answer = synthesize_answer(
-        prompt,
-        evidence,
-        user_id=USER_ID,
-        chat_history=st.session_state["chat_history"],
-        use_plan=False
+        prompt, evidence, user_id=USER_ID, chat_history=st.session_state["chat_history"]
     )
-
     st.session_state["chat_history"].append(("assistant", answer))
-
-    # Save memory
     store_query_and_answer(USER_ID, prompt, answer)
-
     st.rerun()
 
 
 # ============================================================================
-# MEMORY PANEL
+# MEMORY & COMMUNITY PANELS
 # ============================================================================
 with st.expander("User Memory", expanded=False):
-
-    if st.button("Show long-term memory summary"):
+    if st.button("Show Memory"):
         txt = get_user_longterm_memory_text(USER_ID, limit=40)
         st.text_area("Memory", txt or "(empty)", height=300)
-
-    if st.button("List memory items"):
-        rows = list_user_memories(USER_ID, limit=100)
-        if not rows:
-            st.info("No memory found.")
-        else:
-            for r in rows:
-                st.write(f"• {r.get('value')}  (ts={r.get('created')})")
-
-    if st.button("Clear memory (danger)"):
+    if st.button("Clear Memory"):
         clear_user_memory(USER_ID)
-        st.success("Memory cleared.")
+        st.success("Cleared.")
 
-
-# ============================================================================
-# COMMUNITY / LEIDEN PANEL
-# ============================================================================
 with st.expander("Communities & Leiden", expanded=False):
-
-    if st.button("Run Leiden clustering (User-Scoped)"):
-        # UPDATED: Pass user_id
+    if st.button("Run Leiden (User-Scoped)"):
         n = run_leiden(user_id=USER_ID)
-        st.success(f"Leiden complete — {n} communities (for user {USER_ID})")
-
-    if st.button("View community summaries (cached)"):
-        # UPDATED: Pass user_id to only fetch relevant communities
+        st.success(f"Leiden complete — {n} communities")
+    if st.button("View Summaries"):
         summaries = summarize_communities(force_refresh=False, user_id=USER_ID)
-        if not summaries:
-            st.info("No summaries exist yet.")
-        else:
-            for cid, txt in summaries:
-                st.markdown(f"### Community {cid}")
-                st.write(txt)
+        for cid, txt in summaries:
+            st.markdown(f"### Community {cid}")
+            st.write(txt)
+    if st.button("Regenerate Summaries"):
+        summarize_communities(force_refresh=True, user_id=USER_ID)
+        st.success("Regenerated.")
+# ============================================================================
+# GRAPH ENRICHMENT PANEL
+# ============================================================================
+with st.expander("Graph Enrichment (Connect the Dots)", expanded=False):
+    st.markdown("""
+    **Semantic Linking:**
+    This tool scans for "Orphaned" entities (isolated nodes from recent uploads) 
+    and uses the LLM to link them to "Anchor" entities (well-connected nodes) 
+    already in your graph.
+    """)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        # Increase defaults here too
+        orphan_limit = st.number_input("New Nodes to Link", min_value=10, max_value=100, value=40)
+    with col2:
+        anchor_limit = st.number_input("Existing Anchors Context", min_value=10, max_value=100, value=20)
 
-    if st.button("Regenerate all community summaries (Gemini)"):
-        # UPDATED: Pass user_id
-        summaries = summarize_communities(force_refresh=True, user_id=USER_ID)
-        st.success(f"Regenerated {len(summaries)} summaries.")
+    if st.button("Run Graph Enrichment"):
+        with st.spinner(f"Analyzing graph for isolated nodes ({USER_ID})..."):
+            try:
+                count = suggest_and_create_links(
+                    USER_ID, 
+                    limit_orphans=orphan_limit, 
+                    limit_anchors=anchor_limit
+                )
+                
+                if count > 0:
+                    st.success(f"Success! Created {count} new semantic connections.")
+                    st.balloons()
+                else:
+                    st.info("No high-confidence connections found (or graph is already well-connected).")
+                    
+            except Exception as e:
+                st.error(f"Enrichment failed: {e}")
+                log.error(f"Enrichment failed: {e}", exc_info=True)
