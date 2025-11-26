@@ -80,10 +80,12 @@ def store_chunk_with_graph(
     # normalize entities
     ent_dicts = []
     for e in entities or []:
-        if not e: continue
+        if not e:
+            continue
         if isinstance(e, dict):
             name = e.get("name", "").strip()
-            if not name: continue
+            if not name:
+                continue
             ent_dicts.append({
                 "name": name,
                 "type": e.get("type", "unknown"),
@@ -101,7 +103,8 @@ def store_chunk_with_graph(
     for r in relations or []:
         src = str(r.get("src") or r.get("source") or "").strip()
         tgt = str(r.get("tgt") or r.get("target") or "").strip()
-        if not src or not tgt: continue
+        if not src or not tgt:
+            continue
 
         rel_dicts.append({
             "src": src,
@@ -146,7 +149,14 @@ def store_chunk_with_graph(
 
     try:
         with _driver.session() as s:
-            s.run(q_main, cid=chunk.id, text=chunk.text, source=chunk.source, entities=ent_dicts, relations=rel_dicts)
+            s.run(
+                q_main,
+                cid=chunk.id,
+                text=chunk.text,
+                source=chunk.source,
+                entities=ent_dicts,
+                relations=rel_dicts,
+            )
             if user_id:
                 s.run(q_interest, uid=str(user_id).strip(), cid=chunk.id)
         log.info(f"Chunk {chunk.id} stored successfully.")
@@ -171,7 +181,10 @@ def store_image_scene_graph(
     Stores Image -> VisualEntities with optional User Context.
     Structure: (User)-[:INTERESTED_IN]->(Image {user_context:...})-[:DEPICTS]->(Entity)
     """
-    log.info(f"Storing Scene Graph for Image {image_id} ({len(entities)} ents). Context len: {len(user_context or '')}")
+    log.info(
+        f"Storing Scene Graph for Image {image_id} ({len(entities)} ents). "
+        f"Context len: {len(user_context or '')}"
+    )
 
     # Prepare entity data
     ent_dicts = []
@@ -201,7 +214,7 @@ def store_image_scene_graph(
     MERGE (i:Image {id:$iid})
     SET i.path = $path, 
         i.summary = $summary,
-        i.user_context = $context,  // <--- Store User Context here
+        i.user_context = $context,
         i.created_at = timestamp()
     
     WITH i
@@ -209,7 +222,7 @@ def store_image_scene_graph(
       MERGE (n:Entity {name:e.name})
       ON CREATE SET n.type = e.type, 
                     n.description = e.description,
-                    n.modality = 'visual',  // Mark as visual origin
+                    n.modality = 'visual',
                     n.first_seen = timestamp()
       ON MATCH SET n.modality = coalesce(n.modality, 'visual')
       
@@ -233,21 +246,23 @@ def store_image_scene_graph(
 
     try:
         with _driver.session() as s:
-            # Pass 'context' parameter to the query
-            s.run(q_image, 
-                  iid=image_id, 
-                  path=image_path, 
-                  summary=summary, 
-                  context=user_context or "",  # Handle None safely
-                  entities=ent_dicts, 
-                  relations=rel_dicts)
-            
+            s.run(
+                q_image,
+                iid=image_id,
+                path=image_path,
+                summary=summary,
+                context=user_context or "",
+                entities=ent_dicts,
+                relations=rel_dicts,
+            )
+
             if user_id:
                 s.run(q_user_image, uid=str(user_id).strip(), iid=image_id)
-        
+
         log.info(f"Image {image_id} stored successfully.")
     except Exception as e:
         log.error(f"Failed to store image graph: {e}", exc_info=True)
+
 
 # =========================================================
 # 3. SEARCH & FUSION HELPERS
@@ -309,7 +324,8 @@ def search_entities_contains(q: str, limit: int | None = None) -> List[Dict]:
                 "WHERE toLower(e.name) CONTAINS toLower($q) "
                 "RETURN e.name as name, id(e) as id, e.community as community "
                 "LIMIT $limit",
-                q=q, limit=limit
+                q=q,
+                limit=limit,
             )
             return res.data()
     except Exception as e:
@@ -317,36 +333,74 @@ def search_entities_contains(q: str, limit: int | None = None) -> List[Dict]:
         return []
 
 
-def k_hop_chunks(entity_name: str, k: int = 1, limit: int | None = None) -> List[Dict]:
+def k_hop_chunks(
+    entity_name: str,
+    k: int = 1,
+    limit: int | None = None,
+    user_id: str | None = None,
+) -> List[Dict]:
     """
-    Returns evidence (Text Chunks OR Images) k hops away from an entity.
+    Expands *only within the user's personal subgraph*.
+    Ensures no entities leak from other users.
+    Returns only Chunks / Images / Entities.
     """
+    if not user_id:
+        log.warning("k_hop_chunks called without user_id, returning empty.")
+        return []
+
     limit = limit or _cfg.neo4j_query_limit
-    
-    # Updated to fetch BOTH Chunks and Images linked to the entity
-    q = """
-    MATCH (e:Entity)
-    WHERE toLower(e.name) = toLower($name)
-    CALL apoc.path.subgraphNodes(e, {relationshipFilter:'RELATION>|DEPICTS|MENTIONED_IN', maxLevel:$k})
-    YIELD node
-    WITH DISTINCT node
-    WHERE node:Chunk OR node:Image
-    RETURN labels(node)[0] as type, node.id as cid, node.text as text, node.summary as summary, node.path as path
+    uid = str(user_id).strip()
+
+    q = f"""
+    MATCH (u:User {{id:$uid}})-[:INTERESTED_IN]->(src)
+    MATCH (src)-[:MENTIONED_IN|DEPICTS]->(root:Entity)
+
+    // Find base or enriched neighbour node
+    MATCH (root)-[:RELATION|RELATED*0..2]-(e1:Entity {{name:$name}})
+
+    // Expand only along permitted relations
+    OPTIONAL MATCH p=(e1)-[:RELATION|RELATED*1..{k}]-(nbr)
+
+    WITH DISTINCT nbr
+    WHERE nbr IS NOT NULL AND (nbr:Chunk OR nbr:Image OR nbr:Entity)
+
+    RETURN DISTINCT
+        labels(nbr)[0] AS type,
+        CASE WHEN nbr:Chunk OR nbr:Image THEN nbr.id ELSE nbr.name END AS cid,
+        nbr.text AS text,
+        nbr.summary AS summary,
+        nbr.path AS path,
+        nbr.name AS name,
+        nbr.description AS description,
+        nbr.modality AS modality
     LIMIT $limit
     """
+
     try:
         with _driver.session() as s:
-            res = s.run(q, name=entity_name, k=k, limit=limit)
-            data = res.data()
-            # Normalize output so retrieval.py can use it
-            results = []
-            for r in data:
-                if r["type"] == "Image":
-                    # Treat image summary as text for retrieval context
-                    results.append({"cid": r["cid"], "text": f"[IMAGE SUMMARY] {r.get('summary','')} (File: {r.get('path','')})"})
-                else:
-                    results.append({"cid": r["cid"], "text": r.get("text","")})
-            return results
+            rows = s.run(q, uid=uid, name=entity_name, limit=limit).data()
+
+        res = []
+        for r in rows:
+            ntype = r["type"]
+            cid = r["cid"]
+            text = (
+                r.get("text")
+                or r.get("summary")
+                or r.get("description")
+                or r.get("name")
+                or ""
+            )
+            res.append(
+                {
+                    "type": ntype,
+                    "cid": str(cid),
+                    "text": text,
+                    "name": r.get("name"),
+                    "modality": r.get("modality"),
+                }
+            )
+        return res
     except Exception as e:
-        log.error(f"k-hop retrieval failed: {e}")
+        log.error(f"k_hop_chunks failed for entity={entity_name}: {e}", exc_info=True)
         return []

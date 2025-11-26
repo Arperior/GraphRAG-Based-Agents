@@ -69,31 +69,31 @@ def record_user_chunk_interest(user_id: str, chunk_id: str, query: str, tokens: 
     ensure_user_exists(user_id)
 
     # sanitize tokens: short alpha tokens only
-    clean_tokens = [t.lower() for t in tokens if t and re.match(r"^\w{2,}$", t)]
+    clean_tokens = [t.lower() for t in (tokens or []) if t and re.match(r"^\w{2,}$", t)]
     # dedupe while keeping order
     seen = set()
     clean_tokens = [x for x in clean_tokens if not (x in seen or seen.add(x))]
     try:
         with _driver.session() as s:
-                s.run(
-                    """
-                    MATCH (u:User {id:$uid})
-                    MATCH (c:Chunk {id:$cid})
-                    MERGE (u)-[r:INTERESTED_IN]->(c)
-                    ON CREATE SET r.count = 1,
-                                r.tokens = $tokens,
-                                r.last_query = $q,
-                                r.last_seen = timestamp()
-                    ON MATCH SET  r.count = coalesce(r.count,0) + 1,
-                                r.tokens = apoc.coll.toSet(coalesce(r.tokens, []) + $tokens),
-                                r.last_query = $q,
-                                r.last_seen = timestamp()
-                    """,
-                    uid=user_id,
-                    cid=chunk_id,
-                    tokens=clean_tokens,
-                    q=query.strip()
-                )
+            s.run(
+                """
+                MATCH (u:User {id:$uid})
+                MATCH (c:Chunk {id:$cid})
+                MERGE (u)-[r:INTERESTED_IN]->(c)
+                ON CREATE SET r.count = 1,
+                              r.tokens = $tokens,
+                              r.last_query = $q,
+                              r.last_seen = timestamp()
+                ON MATCH SET  r.count = coalesce(r.count,0) + 1,
+                              r.tokens = apoc.coll.toSet(coalesce(r.tokens, []) + $tokens),
+                              r.last_query = $q,
+                              r.last_seen = timestamp()
+                """,
+                uid=user_id,
+                cid=chunk_id,
+                tokens=clean_tokens,
+                q=query.strip()
+            )
         log.info(f"Recorded interest (user={user_id}, chunk={chunk_id}) tokens={clean_tokens}")
     except Exception as e:
         log.error(f"Failed to record user-chunk interest: {e}", exc_info=True)
@@ -104,7 +104,8 @@ def get_user_chunk_interest_count(user_id: str, chunk_id: str) -> int:
     try:
         with _driver.session() as s:
             row = s.run(
-                "MATCH (u:User {id:$uid})-[r:INTERESTED_IN]->(c:Chunk {id:$cid}) RETURN coalesce(r.count,0) AS c",
+                "MATCH (u:User {id:$uid})-[r:INTERESTED_IN]->(c:Chunk {id:$cid}) "
+                "RETURN coalesce(r.count,0) AS c",
                 uid=_norm_user(user_id),
                 cid=chunk_id
             ).single()
@@ -241,3 +242,54 @@ def clear_user_memory(user_id: str):
             uid=user_id
         )
     log.info("Cleared user memory.")
+
+
+# ============================================================
+# NEW: ENTITY MATCH SUCCESS (STRICT PERSONAL + ENRICHED NEIGHBOURS)
+# ============================================================
+def record_entity_success(user_id: str, entity_name: str, query: str, tokens: List[str]):
+    """
+    Positive reinforcement when an entity from the *user's personal subgraph*
+    (including enriched neighbours) is successfully used in retrieval.
+
+    Only records success if:
+      User -[:INTERESTED_IN]-> Source
+      Source -[:MENTIONED_IN|DEPICTS]-> RootEntity
+      RootEntity -[:RELATION|RELATED*0..2]-> (Entity {name})
+    """
+    if not user_id or not entity_name:
+        return
+
+    ensure_user_exists(user_id)
+
+    clean_tokens = [t.lower() for t in (tokens or []) if t and re.match(r"^\w{2,}$", t)]
+    seen = set()
+    clean_tokens = [x for x in clean_tokens if not (x in seen or seen.add(x))]
+
+    try:
+        with _driver.session() as s:
+            s.run(
+                """
+                MATCH (u:User {id:$uid})
+                MATCH (u)-[:INTERESTED_IN]->(src)
+                MATCH (src)-[:MENTIONED_IN|DEPICTS]->(root:Entity)
+                MATCH (root)-[:RELATION|RELATED*0..2]-(e:Entity {name:$ename})
+                WITH DISTINCT u, e
+                MERGE (u)-[r:MATCHED]->(e)
+                ON CREATE SET r.count = 1,
+                              r.tokens = $tokens,
+                              r.last_query = $q,
+                              r.last_seen = timestamp()
+                ON MATCH SET  r.count = coalesce(r.count,0) + 1,
+                              r.tokens = apoc.coll.toSet(coalesce(r.tokens, []) + $tokens),
+                              r.last_query = $q,
+                              r.last_seen = timestamp()
+                """,
+                uid=_norm_user(user_id),
+                ename=entity_name,
+                tokens=clean_tokens,
+                q=query.strip()
+            )
+        log.info(f"[Entity Success] user={user_id}, entity={entity_name}, tokens={clean_tokens}")
+    except Exception as e:
+        log.warning(f"Failed to record entity success: {e}")

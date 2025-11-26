@@ -19,6 +19,7 @@ from pipeline.memory import (
     record_user_chunk_interest,
     get_user_interest_count,
     get_user_interests,
+    record_entity_success,
 )
 
 log = logging.getLogger("retrieval")
@@ -29,9 +30,12 @@ _cfg = load_config()
 # ENTITY SCORING — exact / prefix / substring + fuzzy fallback
 # ================================================================
 def _score_entity_name(query: str, name: str) -> float:
-    """Heuristic + fuzzy scoring for entity ranking."""
+    """Heuristic string-matching score for entity names."""
     q = query.strip().lower()
     n = name.strip().lower()
+
+    if not q or not n:
+        return 0.0
 
     if q == n:
         return 1.0
@@ -49,6 +53,45 @@ def _score_entity_name(query: str, name: str) -> float:
     if ratio > 0.85:
         return 0.8
 
+    return 0.0
+
+
+def _overlap_score(query: str, text: str) -> float:
+    """
+    Token overlap between query and text (used for descriptions).
+    Returns 0.0–0.5 (balanced influence).
+    """
+    if not query or not text:
+        return 0.0
+
+    q_tokens = {t for t in re.split(r"\W+", query.lower()) if len(t) > 2}
+    t_tokens = {t for t in re.split(r"\W+", text.lower()) if len(t) > 2}
+    if not q_tokens or not t_tokens:
+        return 0.0
+
+    inter = q_tokens.intersection(t_tokens)
+    if not inter:
+        return 0.0
+
+    base = len(inter) / max(len(q_tokens), 1)
+    return min(0.5, 0.1 + 0.4 * base)
+
+
+def _query_mentions_visual(q: str) -> bool:
+    terms = ["image", "images", "picture", "diagram", "photo", "vision", "multimodal"]
+    q_low = q.lower()
+    return any(t in q_low for t in terms)
+
+
+def _modality_bias(query: str, modality: str | None) -> float:
+    """
+    Small boost for visual / multimodal entities when query hints at that.
+    """
+    if not modality:
+        return 0.0
+
+    if _query_mentions_visual(query) and modality.lower() == "visual":
+        return 0.25
     return 0.0
 
 
@@ -89,14 +132,16 @@ def _boost_by_user_memory(entity_name: str, user_id: str | None) -> float:
 
 
 # ================================================================
-# ENTITY RETRIEVAL (Funnel Step 1 → Step 2)
+# ENTITY RETRIEVAL (STRICT PERSONAL SCOPE + ENRICHED NEIGHBOURS)
 # ================================================================
 def find_entities(query: str, top_k: int | None = None, user_id: str | None = None) -> List[Dict]:
     """
-    Improved entity retrieval:
-      - tokenized OR search for broader matching
-      - falls back to CONTAINS on full query
-      - keeps existing scoring + memory boost
+    Entity retrieval with strict personal scope:
+      - Only entities reachable from the current user's subgraph:
+          (User)-[:INTERESTED_IN]->(src)
+          (src)-[:MENTIONED_IN|DEPICTS]->(root:Entity)
+          root-[:RELATION|RELATED*0..2]-(e:Entity)   (enriched neighbours)
+      - Falls back to global search ONLY if user_id is None.
     """
     top_k = top_k or _cfg.retrieval_search_limit
 
@@ -107,62 +152,130 @@ def find_entities(query: str, top_k: int | None = None, user_id: str | None = No
     tokens = [t.lower() for t in re.split(r"\W+", q_clean) if t]
 
     # --------------------------------------------------------
-    # Step 1: Broad retrieval with OR across tokens
+    # Step 1: Strict personal-scope retrieval if user_id given
     # --------------------------------------------------------
-    if tokens:
-        where_clauses = [
-            f"toLower(e.name) CONTAINS toLower($t{i})"
-            for i in range(len(tokens))
-        ]
-        cypher = (
-            "MATCH (e:Entity)\n"
-            "WHERE " + " OR ".join(where_clauses) + "\n"
-            "RETURN e.name AS name, e.community AS community, e.description AS description\n"
-            "LIMIT 200"
+    candidates: List[Dict] = []
+
+    if user_id:
+        if tokens:
+            where_clauses = []
+            for i in range(len(tokens)):
+                where_clauses.append(
+                    f"(toLower(e.name) CONTAINS toLower($t{i}) "
+                    f"OR toLower(coalesce(e.description,'')) CONTAINS toLower($t{i}))"
+                )
+            cypher = (
+                "MATCH (u:User {id:$uid})-[:INTERESTED_IN]->(src)\n"
+                "MATCH (src)-[:MENTIONED_IN|DEPICTS]->(root:Entity)\n"
+                "OPTIONAL MATCH (root)-[:RELATION|RELATED*0..2]-(e:Entity)\n"
+                "WITH DISTINCT e\n"
+                "WHERE e IS NOT NULL AND (" + " OR ".join(where_clauses) + ")\n"
+                "RETURN e.name AS name,\n"
+                "       e.community AS community,\n"
+                "       e.description AS description,\n"
+                "       e.modality AS modality\n"
+                "LIMIT 200"
+            )
+            params = {f"t{i}": tokens[i] for i in range(len(tokens))}
+            params["uid"] = user_id
+        else:
+            cypher = """
+                MATCH (u:User {id:$uid})-[:INTERESTED_IN]->(src)
+                MATCH (src)-[:MENTIONED_IN|DEPICTS]->(root:Entity)
+                OPTIONAL MATCH (root)-[:RELATION|RELATED*0..2]-(e:Entity)
+                WITH DISTINCT e
+                WHERE e IS NOT NULL
+                RETURN e.name AS name,
+                       e.community AS community,
+                       e.description AS description,
+                       e.modality AS modality
+                LIMIT 200
+            """
+            params = {"uid": user_id}
+
+        with _driver.session() as s:
+            rows = s.run(cypher, **params)
+            candidates = [r.data() for r in rows]
+
+        log.info(
+            f"[find_entities] (personal) query='{q_clean}' tokens={tokens} "
+            f"candidates_found={len(candidates)}"
         )
-        params = {f"t{i}": tokens[i] for i in range(len(tokens))}
-    else:
-        cypher = """
-            MATCH (e:Entity)
-            WHERE toLower(e.name) CONTAINS toLower($q)
-            RETURN e.name AS name,
-                   e.community AS community,
-                   e.description AS description
-            LIMIT 200
-        """
-        params = {"q": q_clean}
-
-    # Execute query
-    with _driver.session() as s:
-        rows = s.run(cypher, **params)
-        candidates = [r.data() for r in rows]
-
-    log.info(
-        f"[find_entities] query='{q_clean}' tokens={tokens} "
-        f"candidates_found={len(candidates)}"
-    )
 
     # --------------------------------------------------------
-    # Step 2: Score + memory boost
+    # Step 1b: Global fallback only if no user_id
     # --------------------------------------------------------
-    scored = []
+    if not user_id:
+        if tokens:
+            where_clauses = []
+            for i in range(len(tokens)):
+                where_clauses.append(
+                    f"(toLower(e.name) CONTAINS toLower($t{i}) "
+                    f"OR toLower(coalesce(e.description,'')) CONTAINS toLower($t{i}))"
+                )
+            cypher = (
+                "MATCH (e:Entity)\n"
+                "WHERE " + " OR ".join(where_clauses) + "\n"
+                "RETURN e.name AS name,\n"
+                "       e.community AS community,\n"
+                "       e.description AS description,\n"
+                "       e.modality AS modality\n"
+                "LIMIT 200"
+            )
+            params = {f"t{i}": tokens[i] for i in range(len(tokens))}
+        else:
+            cypher = """
+                MATCH (e:Entity)
+                RETURN e.name AS name,
+                       e.community AS community,
+                       e.description AS description,
+                       e.modality AS modality
+                LIMIT 200
+            """
+            params = {}
+
+        with _driver.session() as s:
+            rows = s.run(cypher, **params)
+            candidates = [r.data() for r in rows]
+
+        log.info(
+            f"[find_entities] (global) query='{q_clean}' tokens={tokens} "
+            f"candidates_found={len(candidates)}"
+        )
+
+    # --------------------------------------------------------
+    # Step 2: Score + memory + semantic overlap
+    # --------------------------------------------------------
+    scored: List[Dict] = []
+    visual_ok = _query_mentions_visual(q_clean)
+
     for c in candidates:
         name = c.get("name", "")
-        base_score = _score_entity_name(q_clean, name)
+        desc = c.get("description") or ""
+        modality = c.get("modality")
 
-        if base_score <= 0:
-            # Print drops only when debugging
-            # log.debug(f"[find_entities] dropped: {name} score={base_score}")
+        base_score = _score_entity_name(q_clean, name)
+        desc_score = _overlap_score(q_clean, desc)
+        mem_boost = _boost_by_user_memory(name, user_id)
+        mod_boost = _modality_bias(q_clean, modality)
+
+        total = base_score + desc_score + mem_boost + mod_boost
+
+        # De-emphasize pure visual fluff for non-visual queries
+        if modality == "visual" and not visual_ok:
+            total -= 0.2
+
+        # Require some minimum score (balanced mode)
+        if total <= 0.15:
             continue
 
-        total_score = base_score + _boost_by_user_memory(name, user_id)
+        scored.append(
+            {
+                **c,
+                "score": total,
+            }
+        )
 
-        scored.append({
-            **c,
-            "score": total_score
-        })
-
-    # Sort & return top-K
     scored.sort(key=lambda x: x["score"], reverse=True)
     return scored[:top_k]
 
@@ -170,18 +283,34 @@ def find_entities(query: str, top_k: int | None = None, user_id: str | None = No
 # ================================================================
 # K-HOP EVIDENCE
 # ================================================================
-def get_k_hop_evidence(entity_name: str, k_hop: int = 1, per_entity: int | None = None) -> Tuple[List[Dict], List[str]]:
-    """Return chunk dicts + formatted evidence strings."""
+def get_k_hop_evidence(
+    entity_name: str,
+    k_hop: int = 1,
+    per_entity: int | None = None,
+    user_id: str | None = None
+) -> Tuple[List[Dict], List[str]]:
+    """
+    Return:
+      - raw node dicts from k_hop_chunks
+      - formatted evidence strings tagged by type (TEXT/IMAGE/ENTITY)
+    """
     per_entity = per_entity or 3
 
-    chunks = k_hop_chunks(entity_name, k=k_hop, limit=_cfg.neo4j_query_limit)
+    chunks = k_hop_chunks(entity_name, k=k_hop, limit=_cfg.neo4j_query_limit,user_id=user_id)
 
-    evidences = []
+    evidences: List[str] = []
     for c in chunks[:per_entity]:
-        text = c.get("text", "")
+        text = c.get("text", "") or ""
         cid = c.get("cid")
+        ctype = c.get("type", "Chunk")
+        label = "TEXT"
+        if ctype == "Image":
+            label = "IMAGE"
+        elif ctype == "Entity":
+            label = "ENTITY"
+
         excerpt = truncate(text, 800)
-        evidences.append(f"[Chunk {cid}] {excerpt}")
+        evidences.append(f"[{label} {cid}] {excerpt}")
 
     return chunks, evidences
 
@@ -217,9 +346,14 @@ def gather_evidence_for_query(
     k_hop: int = 1,
     per_entity: int | None = None,
     top_entities: int | None = None,
-    user_id: str | None = None
+    user_id: str | None = None,
 ) -> Tuple[List[str], List[str]]:
-    """Find entities → for each, collect k-hop evidence. Records user->chunk memory (D-final)."""
+    """
+    Find entities → for each, collect k-hop evidence.
+    Records:
+      - user->entity MATCHED (success) for all selected entities
+      - user->chunk interest for TEXT chunks only
+    """
     per_entity = per_entity or 3
     top_entities = top_entities or 5
 
@@ -236,35 +370,43 @@ def gather_evidence_for_query(
                     text = _fetch_chunk_text(cid)
                     if text:
                         excerpt = truncate(text, 800)
-                        all_evidence.append(f"[Chunk {cid}] {excerpt}")
+                        all_evidence.append(f"[TEXT {cid}] {excerpt}")
                 if all_evidence:
                     return [], all_evidence
         return [], []
 
     entity_names = [e["name"] for e in ents]
 
-    all_evidence = []
+    all_evidence: List[str] = []
     q_tokens = _tokenize_query(query)
 
-    # For each entity, collect k-hop chunks; for each selected chunk, record user->chunk interest
+    # For each entity, collect k-hop nodes; record interest for text chunks
     for en in entity_names:
-        chunks, evidences = get_k_hop_evidence(en, k_hop=k_hop, per_entity=per_entity)
+        chunks, evidences = get_k_hop_evidence(en, k_hop=k_hop, per_entity=per_entity,user_id=user_id)
         if not chunks:
             continue
 
-        # include heading and include chunk evidences
         all_evidence.append(f"=== Evidence: {en} ===")
-        for c in chunks[:per_entity]:
-            cid = c.get("cid")
-            excerpt = truncate(c.get("text", ""), 800)
-            all_evidence.append(f"[Chunk {cid}] {excerpt}")
+        all_evidence.extend(evidences)
 
-            # record user -> chunk interest (D-final)
-            if user_id and cid:
-                try:
-                    record_user_chunk_interest(user_id, cid, query, q_tokens)
-                except Exception as e:
-                    log.warning(f"Failed to record user-chunk interest for {cid}: {e}")
+        # NEW: record entity match success (strict personal subgraph)
+        if user_id:
+            try:
+                record_entity_success(user_id, en, query, q_tokens)
+            except Exception as e:
+                log.warning(f"Failed to record entity success for {en}: {e}")
+
+        # record user -> chunk interest (only for TEXT chunks)
+        if user_id:
+            for c in chunks[:per_entity]:
+                if c.get("type") != "Chunk":
+                    continue
+                cid = c.get("cid")
+                if cid:
+                    try:
+                        record_user_chunk_interest(user_id, cid, query, q_tokens)
+                    except Exception as e:
+                        log.warning(f"Failed to record user-chunk interest for {cid}: {e}")
 
     return entity_names, all_evidence
 
@@ -278,7 +420,7 @@ def synthesize_answer(
     user_id: str | None = None,
     chat_history: List[Tuple[str, str]] | None = None,
     max_tokens: int | None = None,
-    use_plan: bool = False
+    use_plan: bool = False,
 ) -> str:
     """Build prompt → call Gemini → return answer."""
     max_tokens = max_tokens or _cfg.gemini.max_output_tokens
@@ -289,7 +431,7 @@ def synthesize_answer(
     prompt_path = _cfg.prompts_dir / "basic_search_system_prompt.txt"
     try:
         template = prompt_path.read_text(encoding="utf-8")
-    except:
+    except Exception:
         template = (
             "Answer the user using ONLY this evidence:\n\n"
             "EVIDENCE:\n{evidence}\n\nQUESTION:\n{question}"
@@ -303,9 +445,9 @@ def synthesize_answer(
 
     prompt = (
         template.replace("{question}", query)
-                .replace("{evidence}", evidence_block)
-                .replace("{user_memory}", longterm)
-                .replace("{working_memory}", working)
+        .replace("{evidence}", evidence_block)
+        .replace("{user_memory}", longterm)
+        .replace("{working_memory}", working)
     )
 
     # Optional Plan Mode
@@ -315,9 +457,9 @@ def synthesize_answer(
             plan_template = plan_path.read_text(encoding="utf-8")
             plan_prompt = (
                 plan_template.replace("{question}", query)
-                             .replace("{evidence}", evidence_block)
-                             .replace("{user_memory}", longterm)
-                             .replace("{working_memory}", working)
+                .replace("{evidence}", evidence_block)
+                .replace("{user_memory}", longterm)
+                .replace("{working_memory}", working)
             )
             return gemini_complete(plan_prompt, max_tokens=max_tokens)
         except Exception as e:

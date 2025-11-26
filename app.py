@@ -120,6 +120,7 @@ if new_user.strip():
 ensure_user_exists(selected)
 st.session_state["user_id"] = selected
 USER_ID = selected
+log.info(f"Active user set to: {USER_ID}")
 
 
 # ============================================================================
@@ -310,10 +311,11 @@ if prompt:
         prompt, k_hop=1, per_entity=3, top_entities=4, user_id=USER_ID
     )
     answer = synthesize_answer(
-        prompt, evidence, user_id=USER_ID, chat_history=st.session_state["chat_history"]
+        prompt, evidence, user_id=USER_ID, chat_history=st.session_state["chat_history"],use_plan=False
     )
     st.session_state["chat_history"].append(("assistant", answer))
     store_query_and_answer(USER_ID, prompt, answer)
+    log.info("[Memory] Stored user query and answer pair.")
     st.rerun()
 
 
