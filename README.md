@@ -15,7 +15,7 @@ You **will** need a **Gemini API Key** to run this. The config files assume you 
 To fire up the main interface:
 
 ```bash
-python app.py
+streamlit app.py
 
 ```
 
