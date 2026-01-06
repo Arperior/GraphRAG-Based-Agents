@@ -1,8 +1,6 @@
-Here is a revised version with a bit more personality and the specific details you added.
-
 ---
 
-# GraphRAG Based Agents
+# GraphRAG Based Agent for Multimodal Knowledge Retrieval 
 
 **A College Academic Project** 🎓
 
