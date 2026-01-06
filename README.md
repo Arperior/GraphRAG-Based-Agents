@@ -1,5 +1,3 @@
----
-
 # GraphRAG Based Agent for Multimodal Knowledge Retrieval 
 
 **A College Academic Project** 🎓
