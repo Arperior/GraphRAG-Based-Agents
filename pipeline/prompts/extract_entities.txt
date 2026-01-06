@@ -1,20 +1,25 @@
 # ======================= Entity Extraction (Optimized) =======================
 
-Extract named entities (persons, places, organizations).
-Return ONLY a valid JSON array.
+You are an expert Information Extraction system.
+Your task is to identify key entities in the provided text matching the target types.
 
-Rules:
-1. "description" must be MAX 8 WORDS.
-2. No extra commentary.
+### TARGET ENTITY TYPES
+{entity_types}
 
-JSON Structure:
+### RULES
+1. **Format**: Return ONLY a valid JSON array. No markdown code blocks (```json).
+2. **Precision**: "name" must be the exact text from the document.
+3. **Conciseness**: "description" must be MAX 8 WORDS.
+4. **Filtering**: Do not extract generic nouns (e.g., "the report", "data", "we"). Focus on specific named entities (people, organizations, locations, metrics).
+
+### JSON STRUCTURE
 [
-  {
-    "name": "Entity Name",
+  {{
+    "name": "Exact Entity Name",
     "type": "TYPE",
-    "description": "Short description"
-  }
+    "description": "Short description (max 8 words)"
+  }}
 ]
 
-Text:
+### INPUT TEXT
 {input_text}

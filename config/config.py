@@ -24,9 +24,9 @@ class Neo4jConfig:
 @dataclass(frozen=True)
 class GeminiConfig:
     api_key: str
-    model: str = "gemini-2.0-flash"   
-    max_output_tokens: int = 512
-    temperature: float = 0.2
+    model: str = "gemini-2.5-flash-lite"   
+    max_output_tokens: int = 4096
+    temperature: float = 0.0
     endpoint: str = "https://generativelanguage.googleapis.com/v1beta/models"
 
 @dataclass(frozen=True)
@@ -35,15 +35,15 @@ class LocalLLMConfig:
     model_dir: Path
     model_file: str
     n_ctx: int = 8192
-    n_gpu_layers: int = 40  
-    verbose: bool = True
+    n_gpu_layers: int = 100  
+    verbose: bool = False
 
 @dataclass(frozen=True)
 class LlavaConfig:
     # Vision model (LLaVA + Clip)
     model_path: str
     clip_path: str # Added to handle mmproj-model-f16.gguf
-    n_ctx: int = 4096
+    n_ctx: int = 8192
     n_gpu_layers: int = 100
     verbose: bool = False
 
@@ -51,6 +51,7 @@ class LlavaConfig:
 class YoloConfig:
     # Vision segmentation model (YOLOv8)
     model_file: str
+    doc_model_file: str
     confidence: float = 0.25
     verbose: bool = False
 
@@ -94,6 +95,7 @@ def load_config() -> AppConfig:
     # 3. Vision Segmentation Config (YOLO)
     # Default to medium model if not specified
     yolo_file = os.getenv("YOLO_MODEL_FILE", "yolov8m-seg.pt")
+    yolo_doc_file = os.getenv("YOLO_DOC_MODEL_FILE", "yolov8x-doclaynet.pt")
     yolo_conf = float(os.getenv("YOLO_CONFIDENCE", "0.25"))
 
     app = AppConfig(
@@ -121,6 +123,7 @@ def load_config() -> AppConfig:
         ),
         yolo=YoloConfig(
             model_file=yolo_file,
+            doc_model_file=yolo_doc_file,
             confidence=yolo_conf,
             verbose=os.getenv("YOLO_VERBOSE", "0") == "1"
         )

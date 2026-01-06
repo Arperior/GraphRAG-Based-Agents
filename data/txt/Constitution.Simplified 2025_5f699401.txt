@@ -1,0 +1,309 @@
+=== PROCESSING MODE ===
+Used Fallback (Full Text): False
+
+=== TARGET TEXT (Used for Graph) ===
+**Article 1**
+
+*   The Constitution of the United States creates the two parts of Congress.
+*   Congress is responsible for making laws.
+*   Section 1 creates Congress.
+*   Congress includes the Senate and the House of Representatives.
+*   Section 2 defines the House of Representatives.
+*   The House of Representatives is known as the lower house of Congress.
+*   A member of the House of Representatives must be 25 years old.
+*   A member of the House of Representatives serves a term of two years.
+*   A member of the House of Representatives must have been a citizen for 7 years.
+*   Each state gets Representatives based on the state’s population.
+*   The House of Representatives has a leader called the Speaker of the House.
+*   Section 3 defines the Senate.
+*   The Senate is known as the upper house of Congress.
+*   A member of the Senate must be 30 years old.
+*   A member of the Senate serves a term of six years.
+*   A member of the Senate must have been a citizen for 9 years.
+*   Each state gets two Senators.
+*   The Vice-President breaks tie votes in the Senate.
+*   Section 4 states each state may establish its own methods for electing their members of Congress.
+*   Congress must meet at least once per year.
+*   Section 5 states Congress must have a minimum number of members present in order to meet.
+*   Fines may be charged for members who do not show up to Congress.
+*   Members may be expelled from Congress.
+*   Each house must keep a journal to record actions and votes.
+*   Neither house can adjourn without the permission of the other.
+*   Section 6 establishes that members of Congress will be paid.
+*   Members of Congress cannot be delayed while traveling to and from Congress.
+*   Members of Congress cannot hold any other office in the government while in the Congress.
+*   Section 7 explains how bills become law.
+*   All bills must pass both houses of Congress in the exact same form.
+*   The House and the Senate must agree to the same wording on a bill before it is sent to the President.
+*   Bills that pass both houses are sent to the President.
+*   The President can sign the bill.
+*   The bill becomes law, when the President signs the bill.
+*   The President can veto the bill.
+*   Veto means that the President doesn't sign a bill to become law.
+*   If the President vetoes a bill, it is sent back to Congress.
+*   If both houses pass the bill by a two-thirds majority, the bill becomes law despite the President's veto.
+*   Section 8 gives Congress the power to establish and maintain an army.
+*   Section 8 gives Congress the power to establish and maintain a navy.
+*   Section 8 gives Congress the power to establish post offices.
+*   Section 8 gives Congress the power to create courts.
+*   Section 8 gives Congress the power to regulate commerce between the states.
+*   Section 8 gives Congress the power to declare war.
+*   Section 8 gives Congress the power to raise money through taxes.
+*   Section 9 states a person cannot be held in jail without a reason of some kind.
+*   Congress cannot pass laws that make things illegal starting yesterday or last week, etc.
+*   No law can give preference to one state over another.
+*   Congress cannot spend money without permission.
+*   Section 10 states states can’t make their own money.
+*   Section 10 states states can't declare war.
+*   Section 10 states states can't tax goods from other states.
+
+**Article 2**
+
+*   Article 2 creates the job of President.
+*   The President is called the Executive.
+*   The President is responsible for enforcing the laws.
+*   Section 1 establishes the office of the President.
+*   Section 1 establishes the office of the Vice-President.
+*   The President serves four year terms.
+*   The Vice-President serves four year terms.
+*   Presidents are elected by the Electoral College.
+*   A President must be 35 years old.
+*   A President must be born in the USA.
+*   The President's pay cannot change, up or down, as long as the President is in office.
+*   Section 2 states the President leads the armed forces.
+*   The President has a Cabinet to help the President.
+*   The Cabinet is a group of advisors.
+*   The President can pardon criminals.
+*   The President can make treaties with other nations.
+*   2/3 of the Senate has to approve of the treaty.
+*   The President chooses many of the judges.
+*   The President chooses other members of the government.
+*   Section 3 states the President must give a yearly speech to the nation.
+*   The President gives suggestions to Congress.
+*   The President meet with Ambassadors.
+*   The President meets with other heads of state from other nations.
+*   The President ensures the laws of the United States are carried out.
+*   Section 4 explains how to kick the President out of office.
+*   Kicking the President out of office is called impeachment.
+
+**Article 3**
+
+*   Article 3 establishes Judges.
+*   Judges are called the Judiciary.
+*   The Judiciary decides if a law is allowable.
+*   The Judiciary decides if a law goes against the Constitution.
+*   Section 1 establishes the Supreme Court.
+*   The Supreme Court is the highest court in the United States.
+*   Judges are chosen serve for life.
+*   Judges serve until Judges want to retire.
+*   Section 2 says what cases the Supreme Court must decide.
+*   Section 2 guarantees trial by jury in criminal court.
+*   Section 3 defines, without any question, the crime of treason.
+*   Treason is trying to overthrow your country's government.
+*   Treason is helping your country's enemies during war.
+
+**Article 4**
+
+*   Article 4 concerns States Rights.
+*   Section 1 states all states will honor the laws of all other states.
+*   Section 2 states citizens of one state are treated equally and fairly like all citizens of another.
+*   If a person accused of a crime in one state flees to another, that person will be returned to the state that person fled from.
+*   Section 3 describes how new states can become part of the United States.
+*   Section 3 explains who controls federal lands.
+*   Section 4 ensures a “Power by the People” government.
+*   Section 4 guarantees that the federal government will protect the states against.
+
+**Article 5**
+
+*   Article 5 describes how to change the Constitution.
+*   2/3 of the Representatives must vote on the change.
+*   2/3 of the Senators must vote on the change.
+*   3/4 of the States must vote for the change (34 of 50).
+
+**Article 6**
+
+*   Article 6 concerns the United States.
+*   Article 6 guarantees that the Constitution and all laws and treaties of the United States to be the supreme law of the country.
+*   Article 6 requires all officers of the United States and of the states to pledge loyalty to the United States and the Constitution when taking office.
+
+**Article 7**
+
+*   Article 7 explained how the Constitution was agreed to.
+*   Of the original 13 states in the United States, nine had to accept the Constitution before it would officially go into effect.
+
+=== ORIGINAL FULL TEXT ===
+1 | Page  
+ Constitution of the United States  (Simplified) 
+  
+Article 1 –  Creates the two parts of Congress.   They are responsible for making 
+laws.  
+ 
+Section 1  
+A.  Creates  Congress and the two houses of Congress:  the Senate and House of 
+Representatives.  
+  
+Section 2  
+A. Defines the House of Representatives, known as the lower house of Congress.  
+B. Must be 25 years old, and serve a term of two years .  Must have been a citizen 
+for 7 years.  
+C. Each state gets Representatives based on the state ’s population.  
+D. Has a leader called the Speaker of the House.  
+  
+Section 3  
+A. Defines the Senate, knows as the upper house of the Congress.  
+B. Must be 30 years old, and serve a term of six years .  Must have been a citizen  
+for 9 years.  
+C. Each state gets two Senators.  
+D. Vice-President breaks tie votes.  
+  
+Section 4  
+A. Says that each state may establish its own methods for electing their members of 
+Congress.  
+B. Requires  that Congress must meet at least once per year.  
+  
+Section 5  
+A. Says that Congress must have a minimum number of members present in order 
+to meet.  
+B. Fines may be charged for members who do not show up, and members may be 
+expelled.  
+C. Each house must keep a journal to record actions  and votes.  
+D. Neither house can adjourn without the permission of the other.  
+  
+Section 6  
+A. Establishes that members of Congress will be paid.  
+B. They cannot be delay ed while traveling to and from Congress.  
+C. They cannot hold any other office in the government while in the Congress.  
+  
+Section 7  
+A. Explains  how bills become law.  
+2 | Page  
+ B. All bills must pass both houses of Congress in the exact same form.   That is, the 
+House and the Senate must agree to the same wording on a bill before it is sent 
+to the President.  
+C. Bills that pass both houses are sent to the President.  
+D. He can either sign the bill, in which case it becomes law, or he can veto it  (Veto 
+means that it is not signed to become a law) . 
+E. If he vetoes a bill, it is sent back to Congress, and if both houses pass it by a 
+two-thirds majority, the bill becomes law despite the President's veto.  
+  
+Section 8  
+A. Gives Congress the power to establish and maintain an army and navy.  
+B. Gives Congress the power t o establish post offices, to create courts, to regulate 
+commerce  (business)  between the states, to declare war, and to raise money  
+(through taxes) . 
+ 
+Section 9  
+A. Cannot be held in jail without a reason of some kind . 
+B. Cannot pass laws that make things illegal starting yesterday or last week, etc.  
+C. No law can give preference to one state over another  
+D. Congress c annot spend money without permission.  
+  
+Section 10  
+A. States can’t make their own money,  declare war, or tax goods from other states.  
+  
+ 
+ 
+Article 2 –  Creates the job of President, called the Executive.   Responsible for 
+enforcing the laws.  
+  
+Section 1  
+A. Establishes the office of the President and the Vice -President.  
+B. Both serve four year terms . 
+C. Presidents are elected by the Electoral  College . 
+D. Must be 35 years old.   Must be born in the USA.  
+E. Their pay cannot change, up or down, as long as he is in office.  
+  
+Section 2  
+A. The President leads the armed forces.  
+B. He has a Cabinet  (a group of advisors)  to help him.  The President can pardon 
+(set free) criminals.  
+C. He can make treaties  (agreements) with other nations, but 2/3 of the Senat e has 
+to approve of the treaty . 
+D. Chooses  many of the judges and other members of the government.  
+  
+Section 3  
+A. President must give a yearly speech to the nation.  
+
+3 | Page  
+ B. Give suggestions to Congress.  
+C. Meet with Ambassadors and other heads of state from other nations.  
+D. Ensure the laws of the United States  are carried out.  
+  
+Section 4  
+A.  Explains how to kick the president out of  office, called impeachment.  
+ 
+  
+Article 3 –  Establishes Judges, called the Judiciary.   They decide if a law is 
+allowable, or if it goes against the Constitution.  
+  
+Section 1  
+A. Establishes the Supreme Court, the highest court in the United States.  
+B. Judges are chosen serve for life, or until they want to retire.  
+  
+Section 2  
+A. Says what cases the Supreme Court must decide.  
+B. It also guarantees trial by jury in criminal court.  
+  
+Section 3  
+A. Defines, without any question, the crime of treason ( trying to overthrow your 
+country's government or of helping your country's enemies during war ). 
+  
+ 
+  
+Article 4 –  States Rights.  
+  
+Section 1  
+A. All states will honor the laws of all other states.  
+  
+Section 2  
+A. Citizens of one state are treated equally and fairly like all citizens of another.  
+B. If a person accused of a crim e in one state flees to another, he/she will be 
+returned to the state that person fled from.  
+  
+Section 3  
+A. How new states can become part of the United States . 
+B. Explains who c ontrol s federal lands.  
+  
+Section 4  
+A. Ensures a “Power by the People” government.  
+B. Guarantees that the federal government will protect the states against.  
+  
+ 
+  
+ 
+
+4 | Page  
+ Article 5 –  How to change the Constitution.  
+A. 2/3 of the Representatives must vote on the change.  
+B. 2/3 of the Senators must vote on the change.  
+C. 3/4 of the States  must vote for the change (34 of  50) 
+  
+ 
+  
+ 
+ 
+Article 6  – Concerns the United States.  
+A. Guarantees that the Constitution and all laws and treaties of the United States  to 
+be the supreme law of the country.  
+B. Requires all officers of the United States and of the states to pledge loyalty  to the 
+United States and the Constitution when taking office.  
+  
+ 
+  
+Article 7 –  Explained how the Constitution was agreed to.  
+A. Of the original 13 states in the United States, nine had to accept the Constitution 
+before it would officially go into effect.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Source:  http://www.atlcomputing.com/aaron/info/easy_constitution.htm   
+Source: http://www.shmoop.com/constitution/article -1-section- 1.html

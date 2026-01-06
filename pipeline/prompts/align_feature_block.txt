@@ -16,7 +16,7 @@ You are an expert Entity Resolver. Your task is to link a specific Image Feature
 
 ### OUTPUT FORMAT
 Return a valid JSON object. Do not include markdown.
-{
+{{
     "match_found": boolean,
     "entity_name": "Exact Name From List (or null if false)"
-}
+}}

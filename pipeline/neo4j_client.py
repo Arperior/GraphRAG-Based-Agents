@@ -175,11 +175,10 @@ def store_image_scene_graph(
     entities: List[Dict],
     relations: List[Dict],
     user_id: str | None,
-    user_context: str | None = None  # <--- NEW: Accept user context
+    user_context: str | None = None
 ):
     """
     Stores Image -> VisualEntities with optional User Context.
-    Structure: (User)-[:INTERESTED_IN]->(Image {user_context:...})-[:DEPICTS]->(Entity)
     """
     log.info(
         f"Storing Scene Graph for Image {image_id} ({len(entities)} ents). "
@@ -200,15 +199,24 @@ def store_image_scene_graph(
     # Prepare relation data
     rel_dicts = []
     for r in relations:
-        src = r.get("source", "").strip()
-        tgt = r.get("target", "").strip()
-        if src and tgt:
-            rel_dicts.append({
-                "src": src,
-                "tgt": tgt,
-                "relation": r.get("relation", "RELATED_TO").upper().replace(" ", "_")
-            })
+        # --- FIX STARTS HERE ---
+        # Safely handle None values for source/target
+        src = str(r.get("source") or "").strip()
+        tgt = str(r.get("target") or "").strip()
+        
+        # If either is empty, skip this relationship
+        if not src or not tgt:
+            continue
+        # --- FIX ENDS HERE ---
 
+        rel_dicts.append({
+            "src": src,
+            "tgt": tgt,
+            "relation": str(r.get("relation") or "RELATED_TO").strip().upper().replace(" ", "_")
+        })
+
+    # ... rest of the function remains the same ...
+    
     # Query: Create Image Node (with Summary & User Context) & Link to Entities
     q_image = """
     MERGE (i:Image {id:$iid})
@@ -226,7 +234,6 @@ def store_image_scene_graph(
                     n.first_seen = timestamp()
       ON MATCH SET n.modality = coalesce(n.modality, 'visual')
       
-      // The Paper's N-MMKG link: Image DEPICTS Entity
       MERGE (i)-[:DEPICTS]->(n)
 
     WITH i
@@ -262,7 +269,6 @@ def store_image_scene_graph(
         log.info(f"Image {image_id} stored successfully.")
     except Exception as e:
         log.error(f"Failed to store image graph: {e}", exc_info=True)
-
 
 # =========================================================
 # 3. SEARCH & FUSION HELPERS
@@ -404,3 +410,25 @@ def k_hop_chunks(
     except Exception as e:
         log.error(f"k_hop_chunks failed for entity={entity_name}: {e}", exc_info=True)
         return []
+
+# =========================================================
+# 5. USER DATA MANAGEMENT
+# =========================================================
+def delete_user_data(user_id: str):
+    """
+    Deletes all nodes belonging to the specified user.
+    This will DELETE the User node and all connected nodes via DETACH DELETE.
+    """
+    q = """
+    MATCH (n)
+    WHERE n.user_id = $uid OR (n:User AND n.id = $uid)
+    DETACH DELETE n
+    """
+
+    try:
+        with _driver.session() as s:
+            result = s.run(q, uid=str(user_id).strip())
+            log.info(f"Deleted data for user_id={user_id}")
+    except Exception as e:
+        log.error(f"Failed to delete user data for user_id={user_id}: {e}", exc_info=True)
+        raise

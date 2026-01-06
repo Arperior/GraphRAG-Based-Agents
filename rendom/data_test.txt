@@ -12,7 +12,12 @@ USA is going into a recession.
 USA is also known as United States or US or The United States of America.
 The United States of America is a federal republic in North America with a capital in Washington, D.C., and 50 states. It is bordered by Canada to the north and Mexico to the south, with the Atlantic and Pacific Oceans on its coasts. The country has diverse geography, a population of over 330 million people, and English is the most widely spoken language, though Spanish is also common.
 The IT industry is based in Silicon Valley which is in USA.
-The United States IT industry is a global leader, characterized by innovation, 
-significant investment, and a vast, dynamic market encompassing software, hardware, semiconductors, and internet services. 
+The United States IT industry is a global leader, characterized by innovation, significant investment, and a vast, dynamic market encompassing software, hardware, semiconductors, and internet services. 
 Driven by a highly educated workforce and a culture of entrepreneurship, the sector contributes billions to the US economy through high-paying jobs and exports, and hosts many of the world's largest technology companies. 
 This dominance is supported by a business-friendly environment that encourages technological advancement and investment from both domestic and foreign firms. 
+Non-Consecutive Terms: Donald Trump’s inauguration in January 2025 makes him the second president in U.S. history to serve two non-consecutive terms (the 45th and 47th President), the first being Grover Cleveland in the late 19th century. His Vice President for this term is JD Vance.
+Global Reserve Currency: The United States Dollar (USD) serves as the world's primary reserve currency. This status allows the USA to borrow money at lower costs than other countries and plays a critical role in stabilizing the global economy, even during periods of domestic economic uncertainty or recession risks.
+Beyond technology, the US is a global energy powerhouse. It is currently the world’s largest producer of both oil and natural gas, having surpassed nations like Saudi Arabia and Russia. This energy independence is a significant factor in its geopolitical leverage and industrial capacity.
+While Silicon Valley (California) remains the premier hub, the IT industry has decentralized. Significant tech hubs have emerged elsewhere, such as "Silicon Hills" in Austin, Texas, and "Data Center Alley" in Northern Virginia, which processes a massive percentage of the world's internet traffic.
+
+This diagram outlines the 3 branches of the US government

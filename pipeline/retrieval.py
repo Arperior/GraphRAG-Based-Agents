@@ -6,7 +6,7 @@ Retrieval module: broad search → re-ranking → k-hop evidence → synthesis
 from __future__ import annotations
 from typing import List, Tuple, Dict
 import logging
-import Levenshtein # type: ignore
+import Levenshtein
 import re
 
 from config.config import load_config
@@ -287,7 +287,8 @@ def get_k_hop_evidence(
     entity_name: str,
     k_hop: int = 1,
     per_entity: int | None = None,
-    user_id: str | None = None
+    user_id: str | None = None,
+    exclude_chunk_ids: set[str] | None = None  # <--- NEW ARGUMENT
 ) -> Tuple[List[Dict], List[str]]:
     """
     Return:
@@ -295,14 +296,49 @@ def get_k_hop_evidence(
       - formatted evidence strings tagged by type (TEXT/IMAGE/ENTITY)
     """
     per_entity = per_entity or 3
+    exclude_chunk_ids = exclude_chunk_ids or set()
 
-    chunks = k_hop_chunks(entity_name, k=k_hop, limit=_cfg.neo4j_query_limit,user_id=user_id)
+    # Fetch slightly more chunks than needed to allow for filtering
+    # e.g., if we want 3, we fetch 10 so we have backups if the first 3 are excluded
+    fetch_limit = per_entity * 4 
+    
+    # We call the existing Neo4j query function (assumed to be imported from neo4j_client)
+    chunks = k_hop_chunks(entity_name, k=k_hop, limit=fetch_limit, user_id=user_id)
+
+    # --- FILTERING LOGIC ---
+    unique_chunks = []
+    seen_in_this_batch = set()
+
+    for c in chunks:
+        cid = str(c.get("cid", ""))
+        
+        # skip invalid IDs
+        if not cid: continue
+        
+        # skip duplicates within this single query result
+        if cid in seen_in_this_batch: continue
+        seen_in_this_batch.add(cid)
+
+        # THE CRITICAL FIX: Skip chunks the user has already seen this session
+        if cid in exclude_chunk_ids:
+            continue
+
+        unique_chunks.append(c)
+    
+    # Fallback: If filtering removed EVERYTHING (e.g., user is asking about the exact same topic 4 times),
+    # we should probably show the old info again rather than silence.
+    # But for now, we return the new stuff. 
+    # If unique_chunks is empty, it forces the system to rely on other entities or general knowledge.
+    
+    final_chunks = unique_chunks[:per_entity]
+    # -----------------------
 
     evidences: List[str] = []
-    for c in chunks[:per_entity]:
+    for c in final_chunks:
         text = c.get("text", "") or ""
         cid = c.get("cid")
         ctype = c.get("type", "Chunk")
+        
         label = "TEXT"
         if ctype == "Image":
             label = "IMAGE"
@@ -312,7 +348,7 @@ def get_k_hop_evidence(
         excerpt = truncate(text, 800)
         evidences.append(f"[{label} {cid}] {excerpt}")
 
-    return chunks, evidences
+    return final_chunks, evidences
 
 
 # ================================================================
@@ -347,6 +383,7 @@ def gather_evidence_for_query(
     per_entity: int | None = None,
     top_entities: int | None = None,
     user_id: str | None = None,
+    session_history_ids: set[str] | None = None # <--- NEW ARGUMENT
 ) -> Tuple[List[str], List[str]]:
     """
     Find entities → for each, collect k-hop evidence.
@@ -356,6 +393,7 @@ def gather_evidence_for_query(
     """
     per_entity = per_entity or 3
     top_entities = top_entities or 5
+    session_history_ids = session_history_ids or set()
 
     ents = find_entities(query, top_k=top_entities, user_id=user_id)
     if not ents:
@@ -380,9 +418,16 @@ def gather_evidence_for_query(
     all_evidence: List[str] = []
     q_tokens = _tokenize_query(query)
 
-    # For each entity, collect k-hop nodes; record interest for text chunks
     for en in entity_names:
-        chunks, evidences = get_k_hop_evidence(en, k_hop=k_hop, per_entity=per_entity,user_id=user_id)
+        # Pass the exclusion list (session history) to the lower-level function
+        chunks, evidences = get_k_hop_evidence(
+            en, 
+            k_hop=k_hop, 
+            per_entity=per_entity, 
+            user_id=user_id,
+            exclude_chunk_ids=session_history_ids 
+        )
+        
         if not chunks:
             continue
 

@@ -2,42 +2,51 @@
 You are a Knowledge Graph Architect specializing in Data Integration.
 
 ### TASK
-You are given a list of entities with specific Roles:
-1. **ORPHAN**: An isolated node with 0 connections. **Your Priority: Find links for these.**
-2. **ANCHOR**: A highly connected node (Hub). Use these as attachment points.
+Link "Orphans" (isolated entities) to "Anchors" (hub entities) based on logical, factual, or systemic relationships.
 
-### CONFIDENCE SCORING INSTRUCTIONS
-Provide a confidence score (0.0–1.0) that reflects evidence strength:
-• 0.8–1.0: Very strong domain knowledge match (common real-world relationship)
-• 0.6–0.79: Likely connection (contextually related in a workflow/system)
-• 0.4–0.59: Possible but needs verification
-• <0.4: Do NOT include these in the output
+### INPUT DATA
+**Orphans:** {orphans_list}
+**Anchors:** {anchors_list}
 
-Confidence MUST be numeric (float).
+### ALLOWED RELATIONSHIPS
+Do NOT limit yourself to just "LOCATED_IN". Use the most specific relationship possible:
 
-Examples:
-- "Docker" PART_OF "DevOps Tools" → confidence: 0.9
-- "Transformers" USED_FOR "NLP tasks" → confidence: 0.85
+1. **Structural / Hierarchy:**
+   - `PART_OF` (e.g., "Senate" -> PART_OF -> "Congress")
+   - `SUBDIVISION_OF` (e.g., "Austin" -> SUBDIVISION_OF -> "Texas")
+   - `MEMBER_OF` (e.g., "Judge" -> MEMBER_OF -> "Supreme Court")
 
-### DATA
-{entities_json}
+2. **Leadership / Role:**
+   - `LEADS` (e.g., "President" -> LEADS -> "Executive Branch")
+   - `HEAD_OF` (e.g., "Trump" -> HEAD_OF -> "State")
+   - `APPOINTED_BY` (e.g., "Cabinet Member" -> APPOINTED_BY -> "President")
 
-### INSTRUCTIONS
-1. **Orphan-to-Anchor**: Can an Orphan be connected to an Anchor? (e.g., "PIR Sensor" belongs to "IoT System").
-2. **Orphan-to-Orphan**: Do two Orphans belong together? (Clustering).
-3. **Relationship Types**: Use precise, active verbs that describe the relationship.
-   - *Examples:* CONNECTS_TO, PART_OF, CONTROLS, SENDS_DATA_TO, MEASURES, RUNS_ON, USED_FOR, USED_IN ,RELATED_TO
-   - You may create new relationship types if they fit the description better.
+3. **Function / Usage:**
+   - `CURRENCY_OF` (e.g., "Dollar" -> CURRENCY_OF -> "USA")
+   - `USED_FOR` (e.g., "Vote" -> USED_FOR -> "Election")
+   - `ESTABLISHED_BY` (e.g., "Constitution" -> ESTABLISHED_BY -> "USA")
+
+4. **Geography:**
+   - `LOCATED_IN` (Physical location only)
+   - `CAPITAL_OF` (e.g., "Delhi" -> CAPITAL_OF -> "India")
+
+### RULES (CRITICAL)
+1. **Geopolitical Consistency:** - STRICTLY SEPARATE contexts.
+   - If {orphans_list} contains "Supreme Court" and {anchors_list} contains "USA", link them. Do NOT link to "Delhi" unless explicitly stated.
+2. **Ignore Visual Noise:**
+   - If an entity is a generic object (e.g., "Umbrella", "Tie", "Building Icon", "JPG"), IGNORE IT. Do not output any relation.
+3. **Confidence Scoring:**
+   - **0.9**: Factually undeniable (Paris -> Capital -> France).
+   - **0.7**: Highly likely context (Server -> Located -> Data Center).
+   - **< 0.6**: Do not output.
 
 ### OUTPUT FORMAT
 Return ONLY a valid JSON object.
-{{
-    "relations": [
-    {
-      "source": "Entity A",
-      "target": "Entity B",
-      "relation": "VERB_PHRASE",
-      "confidence": 0.0-1.0
-    }
+
+{
+  "relations": [
+    { "source": "Senate", "target": "Congress", "relation": "PART_OF", "confidence": 0.95 },
+    { "source": "Trump", "target": "Executive Branch", "relation": "LEADS", "confidence": 0.9 },
+    { "source": "Rupee", "target": "India", "relation": "CURRENCY_OF", "confidence": 0.9 }
   ]
-}}
+}

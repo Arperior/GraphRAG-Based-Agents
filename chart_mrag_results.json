@@ -1,0 +1,252 @@
+[
+  {
+    "id": "intra_document_text_chart_00226",
+    "retrieval_no_enrichment": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      },
+      "hop_2": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "retrieval_enriched": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "final_response": "I cannot answer your question with the provided information. The text only states that 42% and 30% of Republicans were compared to another group, but it does not specify what those percentages refer to or if they relate to the question about men needing to prove themselves more.",
+    "gt": "{\"chart_00046_06\": \"28% saying each is a major reason why there aren\u2019t more women in top executive business positions among Rep/Lean Rep men for Women have to do more to prove themselves than men\", \"paragraph_00046_05_05\": \"42% of Republicans say women having to do more to prove themselves than men is a major reason for the lack of women in top business leadership positions\"}",
+    "scores": {
+      "correctness": 0.0,
+      "coverage": 0.0
+    }
+  },
+  {
+    "id": "intra_document_text_chart_00209",
+    "retrieval_no_enrichment": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      },
+      "hop_2": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "retrieval_enriched": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "final_response": "The total Black population in the United States reached 47.9 million in 2022. Information regarding the percentage change in Maryland's Black population from 2010 to 2022 is not available in the provided text.",
+    "gt": "{\"chart_00058_04\": \"12% change of the Black population by state from 2010 to 2022 in MD\", \"paragraph_00058_01_01\": \"The number of Black people living in the United States reached 47.9 million in 2022\"}",
+    "scores": {
+      "correctness": 1.0,
+      "coverage": 0.5
+    }
+  },
+  {
+    "id": "intra_document_text_chart_00205",
+    "retrieval_no_enrichment": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      },
+      "hop_2": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "retrieval_enriched": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "final_response": "I cannot answer your question about the percentage of 13- to 17-year-olds who use Facebook, as this information is not present in the provided text.\n\nHowever, the text does state that 63% of adults with a high school diploma or less use Facebook.",
+    "gt": "{\"chart_00066_06\": \"33% of U.S. teens ages 13 to 17 who say they ever use Facebook among Mean % of Teens\", \"paragraph_00066_03_02\": \"63% of adults with a high school diploma or less use Facebook\"}",
+    "scores": {
+      "correctness": 1.0,
+      "coverage": 0.5
+    }
+  },
+  {
+    "id": "intra_document_text_chart_00300",
+    "retrieval_no_enrichment": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      },
+      "hop_2": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "retrieval_enriched": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "final_response": "I cannot answer your question about the percentage of conservative or moderate Democrats who think legislation could be passed to reduce the role of money in politics, as this information is not present in the provided text.\n\nHowever, the text does state that three-quarters (76%) of respondents believe that big business influence in congressional decision-making is appropriate.",
+    "gt": "{\"chart_00073_08\": \"26% who say each of the following has About the right amount influence when it comes to the decisions that members of Congress make among Large employers in their districts\", \"paragraph_00073_03_03\": \"57% of conservative or moderate Democrats say it's possible to have laws that would reduce the role of money in politics\"}",
+    "scores": {
+      "correctness": 0.0,
+      "coverage": 0.0
+    }
+  },
+  {
+    "id": "intra_document_text_chart_00264",
+    "retrieval_no_enrichment": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      },
+      "hop_2": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "retrieval_enriched": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "final_response": "I cannot determine the percentage of middle-income Black adults who are not very happy or not at all happy from the provided text.\n\nHowever, the text does state that only 16% of Black adults who rarely or never have enough time to do the things they want are extremely or very happy. This implies that a significantly larger percentage of this group are not very happy or not at all happy.",
+    "gt": "{\"chart_00065_01\": \"12% of Black adults who say they are Not too/Not at all happy among Middle income distribution\", \"paragraph_00065_02_06\": \"16% of Black adults who rarely or never have enough time to do what they want say they are extremely or very happy\"}",
+    "scores": {
+      "correctness": 0.0,
+      "coverage": 0.0
+    }
+  },
+  {
+    "id": "intra_document_text_chart_00294",
+    "retrieval_no_enrichment": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      },
+      "hop_2": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "retrieval_enriched": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "final_response": "I cannot provide the percentage of Germans with a favorable view of the European Union in 2019, as this specific information is not present in the provided text.\n\nHowever, in the nine EU member states surveyed, a median of 69% had a favorable view of the organization.",
+    "gt": "{\"chart_00076_02\": \"69% who have a favorable opinion of the European Union among Germany in 2019\", \"paragraph_00076_01_03\": \"In the nine EU member states surveyed, a median of 31% have an unfavorable view of the EU\"}",
+    "scores": {
+      "correctness": 0.0,
+      "coverage": 0.5
+    }
+  },
+  {
+    "id": "intra_document_text_chart_00255",
+    "retrieval_no_enrichment": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      },
+      "hop_2": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "retrieval_enriched": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "final_response": "I cannot answer your question. The provided text does not contain information about the political leanings of individuals or their views on passing laws to reduce the role of money in politics. It only states that 63% of people believe that all or most elected officials run for office to make a lot of money.",
+    "gt": "{\"chart_00073_03\": \"12% of Liberal who say It's not possible to have laws that would effectively reduce the role of money in politics\", \"paragraph_00073_06_01\": \"63% say that all or most elected officials ran for office to make a lot of money\"}",
+    "scores": {
+      "correctness": 0.0,
+      "coverage": 0.0
+    }
+  },
+  {
+    "id": "intra_document_text_chart_00224",
+    "retrieval_no_enrichment": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      },
+      "hop_2": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "retrieval_enriched": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "final_response": "I cannot answer your question about the percentage of Asian voters in Washington or how many of them were born in the United States. The provided text only states that Asian Americans are the only major racial or ethnic group where more eligible voters are naturalized citizens than U.S.-born citizens (56% vs. 44%).",
+    "gt": "{\"chart_00052_03\": \"10% of EVs who are Asian in Washington\", \"paragraph_00052_06_01\": \"More eligible Asian American voters are naturalized citizens (56%) than U.S.-born citizens (44%)\"}",
+    "scores": {
+      "correctness": 1.0,
+      "coverage": 0.5
+    }
+  },
+  {
+    "id": "intra_document_text_chart_00253",
+    "retrieval_no_enrichment": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      },
+      "hop_2": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "retrieval_enriched": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "final_response": "Approximately 20 countries globally have more than one time zone, often due to the administration of overseas territories. The provided information does not specify the percentage of the population in these countries that resides in the UTC+3 time zone.",
+    "gt": "{\"chart_00078_08\": \"9% of populations in +3\", \"paragraph_00078_06_01\": \"Only around 20 countries in the world have more than one time zone due to administering overseas territories\"}",
+    "scores": {
+      "correctness": 1.0,
+      "coverage": 0.5
+    }
+  },
+  {
+    "id": "intra_document_text_chart_00292",
+    "retrieval_no_enrichment": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      },
+      "hop_2": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "retrieval_enriched": {
+      "hop_1": {
+        "Recall@5": 1.0,
+        "Recall@10": 1.0
+      }
+    },
+    "final_response": "I cannot provide an exact number of hours per week that employed married women spend relaxing. However, previous research indicates that in opposite-sex marriages where both spouses are employed, husbands tend to spend more time on leisure than wives do.",
+    "gt": "{\"chart_00079_03\": \"18.7 average hours spent per week in Relaxing among Wives\", \"paragraph_00079_01_06\": \"In opposite-sex marriages where both spouses work, tasks are not divided equally, and husbands tend to spend more leisure time than wives\"}",
+    "scores": {
+      "correctness": 0.0,
+      "coverage": 0.0
+    }
+  }
+]

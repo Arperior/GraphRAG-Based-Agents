@@ -37,6 +37,16 @@ def request_permission_to_load(model_type: str):
                     torch.cuda.ipc_collect()
             except Exception:
                 pass
+
+            # 5. Clear Paddle Cache (New integration)
+            try:
+                import paddle
+                if paddle.device.is_compiled_with_cuda():
+                    paddle.device.cuda.empty_cache()
+            except ImportError:
+                pass
+            except Exception as e:
+                log.warning(f"Paddle cache clear failed: {e}")
             
             log.info("GPU VRAM cleared.")
         else:

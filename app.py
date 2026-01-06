@@ -146,6 +146,10 @@ if not st.session_state["db_ready"]:
 # ============================================================================
 if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
+# Initialize a set to track which Chunk IDs have been "seen" in this session
+# This prevents the bot from retrieving the exact same paragraph 5 times in a row.
+if "seen_chunks" not in st.session_state:
+    st.session_state["seen_chunks"] = set()
 
 
 # ============================================================================
@@ -307,11 +311,33 @@ prompt = st.chat_input("Ask anything...")
 
 if prompt:
     st.session_state["chat_history"].append(("user", prompt))
+    
+    # --- UPDATED RETRIEVAL CALL ---
+    # We pass the 'seen_chunks' set so the retriever knows what to avoid.
     _, evidence = gather_evidence_for_query(
-        prompt, k_hop=1, per_entity=3, top_entities=4, user_id=USER_ID
+        prompt, 
+        k_hop=4, 
+        per_entity=20, 
+        top_entities=20, 
+        user_id=USER_ID,
+        session_history_ids=st.session_state["seen_chunks"] # <--- Contextual Filtering
     )
+    
+    # --- UPDATE SEEN CHUNKS ---
+    # Extract IDs from the new evidence and add them to the set
+    import re
+    for line in evidence:
+        # Matches: [TEXT chunk_1234] or [IMAGE img_5678]
+        match = re.search(r"\[(TEXT|IMAGE|ENTITY) (.*?)\]", line)
+        if match:
+            cid = match.group(2).strip()
+            st.session_state["seen_chunks"].add(cid)
+            
+    # Optional debug: print how many chunks we've blocked so far
+    # log.info(f"Session filter size: {len(st.session_state['seen_chunks'])}")
+
     answer = synthesize_answer(
-        prompt, evidence, user_id=USER_ID, chat_history=st.session_state["chat_history"],use_plan=False
+        prompt, evidence, user_id=USER_ID, chat_history=st.session_state["chat_history"], use_plan=False
     )
     st.session_state["chat_history"].append(("assistant", answer))
     store_query_and_answer(USER_ID, prompt, answer)
