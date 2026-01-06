@@ -1,8 +1,6 @@
 # GraphRAG Based Agent for Multimodal Knowledge Retrieval 
 
-**A College Academic Project** 🎓
-
-This repo houses my work on combining Graph Retrieval-Augmented Generation (GraphRAG) with agentic workflows. The main goal was to see if knowledge graphs could handle complex reasoning better than standard RAG.
+This repo houses my work on combining Graph Retrieval-Augmented Generation (GraphRAG) and multimodal knowledge graphs with agentic workflows. The main goal was to see if knowledge graphs could handle complex reasoning better than standard RAG.
 
 ## 🛠️ Setup & Installation
 
