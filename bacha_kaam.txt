@@ -1,33 +1,8 @@
 | Feature                             | Purpose                                                          | Implementation Plan                                                                                                                                                                         |
-| ----------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1. PDF & Image Ingestion**        | Extend ingestion beyond plain text                               | ➤ Add PDF parser (e.g. `pdfplumber` or `PyMuPDF`) → extract text → pass to the same pipeline.<br>➤ For images, use CLIP or Gemini’s Vision API to caption & embed content.                  |
-| **2. Multimodal Embedding Layer**   | Represent non-textual data in a unified space                    | ➤ Use Graph nodes to store image/text embedding vectors (via CLIP or Gemini’s embedding endpoint).<br>➤ Later, you can cluster across modalities using vector similarity + graph proximity. |
-| **3. Context-Aware Chat Interface** | True chatbot mode where user queries drive retrieval + reasoning | ➤ Build a `/chat` mode: user sends a question → `retrieval.gather_evidence()` fetches relevant graph segments → Gemini synthesizes response (using the Analyst prompt).                     |
-| **4. Graph Memory Indexing**        | Speed up retrieval for large graphs                              | ➤ Implement hybrid search: Cypher for relations, FAISS (or Neo4j Graph Data Science) for embeddings.                                                                                        |
-| **5. Persistent User Memory**       | Personalized context over sessions                               | ➤ Store `User` nodes connected to relevant `Entity` nodes. Update graph incrementally per session.                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------                                                                                    |
 | **6. Provenance Expansion**         | Show where every answer came from                                | ➤ Add a “Data Source” layer (document name, chunk ID, snippet preview). Show references in responses.                                                                                       |
 | **7. Visualization Dashboard**      | Visual graph exploration                                         | ➤ Integrate `pyvis` or `networkx` visualization inside Streamlit to display entity connections.                                                                                             |
 | **8. Evaluation Pipeline**          | Evaluate accuracy & relevance                                    | ➤ Create benchmark queries and compare against a vector-only RAG (to show GraphRAG’s advantage).                                                                                            |
-
-Current Snapshot:
-Streamlit App (UI)
-   │
-   ├── preprocessing.py → chunk_text()
-   ├── entity_extraction.py / relation_extractor.py
-   │       ↓
-   │   Mistral (local) via llama_cpp
-   │
-   ├── graph_builder.py → Neo4j
-   │       ↓
-   │   store_chunk_with_graph()
-   │
-   ├── clustering.py → Leiden community detection
-   │
-   ├── retrieval.py → contextual k-hop search
-   │       ↓
-   ├── llm_client_gemini.py → answer synthesis
-   │
-   └── logs/ + config/ (core system backbone)
 
 TO-DO: add a maintenance fucntion for node merging
 When you write up evaluation in your minor-project report, make sure to note:
@@ -35,31 +10,10 @@ Dataset does not include explicit evidence IDs, so we derive evidence nodes from
 Recall@k results are therefore approximate — they measure whether your system retrieves any relevant data derived from the sample, not necessarily exactly the human-judged evidence used to create the answer.
 Results remain meaningful for comparing retrieval + KG-RAG vs. baseline or ablation, but they are not strictly identical to the original paper’s GT-retrieval evaluation.
 
-| Item                                             | Paper Section        | Est. Time | Priority    |
-| ------------------------------------------------ | -------------------- | --------- | ----------- |
-| Ground Truth References (chunk/chart IDs per QA) | Appendix E.1         | 30 min    | CRITICAL    |
-| Recall@5 Metric                                  | Section 5.1, Table 3 | 20 min    | CRITICAL    |
-| Recall@10 Metric                                 | Section 5.1, Table 3 | 5 min     | CRITICAL    |
-| Multimodal Recall@5/10                           | Appendix E.2, Eq(5)  | 20 min    | RECOMMENDED |
-| Text vs Chart Recall@5                           | Section 5.4, Fig 7   | 30 min    | RECOMMENDED |
-| Integration & Testing                            | -                    | 30 min    | CRITICAL    |
-
 | Experiment                          | What It Shows                       |
 | ----------------------------------- | ----------------------------------- |
 | ✔ Enrichment vs No Enrichment       | Impact of *your innovation*         |
 | ✔ Multi-hop Reasoning (k-hop sweep) | Graph helps QA, proves RAG strength |
-
-| Metric                       | Paper Reference (SOTA) | **Your System — Estimated** | Rationale                                  |
-| ---------------------------- | ---------------------- | --------------------------- | ------------------------------------------ |
-| Recall@5 (All Queries)       | 42–73%                 | **31.2%**                   | Graph retrieval, limited chart linking     |
-| Recall@10 (All Queries)      | 61–80%                 | **46.7%**                   | More fallback hits in expanded search      |
-| Correctness                  | 58.19%                 | **36.5%**                   | Local LLM + imperfect evidence grounding   |
-| Coverage                     | 73.87%                 | **51.3%**                   | Entities retrieved, some missing keypoints |
-| Text-only Recall@5           | ~70–80%                | **49.6%**                   | Mistral & graph edges help here            |
-| Chart-only Recall@5          | ~84%                   | **23.4%**                   | Vision grounding partially simulated       |
-| Cross-modal Recall (Q→Chart) | 35–45%                 | **27.1%**                   | Limited chart entity linking               |
-| Multi-hop (2-Hop) Recall     | Sharp drop             | **17.9%**                   | Neo4j traversal without neural ranker      |
-| Answer Latency               | 3–4s                   | **6–9s**                    | Local inference overhead                   |
 
 Due to hardware and API constraints limiting full execution of multimodal evaluation, we conducted a partial benchmark on textual elements and extrapolated expected multimodal scores based on observed trends in Chart-MRAG. 
 These results reflect projected system performance under typical multimodal question patterns. Also state that had to infer ground truth from the dataset and did not have actual gt.
